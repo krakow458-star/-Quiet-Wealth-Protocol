@@ -5,7 +5,8 @@ import {
   Coins, 
   ExternalLink,
   Calculator,
-  ArrowUpRight
+  ArrowUpRight,
+  Terminal
 } from 'lucide-react';
 import { AFFILIATE_LINKS } from '../protocolData';
 
@@ -56,10 +57,10 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
   const interestEarned = result ? result.finalValue - result.amount : 0;
 
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border-green-500/20 shadow-2xl">
+    <div className="glass-panel rounded-none overflow-hidden border-green-500/20 shadow-2xl">
       <div className="bg-green-500/10 p-4 border-b border-green-500/20 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-500/20 rounded-lg text-green-400">
+          <div className="p-2 bg-green-500/20 rounded-none text-green-400">
             <Coins size={20} />
           </div>
           <div>
@@ -79,7 +80,7 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
               placeholder="e.g. 1000"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xl text-white font-mono outline-none focus:border-green-400/50 transition-all"
+              className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xl text-white font-mono outline-none focus:border-green-400/50 transition-all"
             />
           </div>
 
@@ -90,7 +91,7 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
                 <button 
                   key={y}
                   onClick={() => setYears(y)}
-                  className={`py-2 rounded-lg text-[10px] font-bold transition-all border ${
+                  className={`py-2 rounded-none text-[10px] font-bold transition-all border ${
                     years === y 
                       ? 'bg-green-500 text-black border-green-500' 
                       : 'bg-white/5 text-muted border-white/10 hover:border-white/20'
@@ -104,7 +105,7 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
 
           <button 
             onClick={calculateYield}
-            className="w-full py-4 bg-green-500 text-black rounded-xl text-[10px] font-black uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] flex items-center justify-center gap-3"
+            className="w-full py-4 bg-green-500 text-black rounded-none text-[10px] font-black uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] flex items-center justify-center gap-3"
           >
             <Calculator size={14} /> Calculate Potential Earnings
           </button>
@@ -112,7 +113,7 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
 
         {result && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-2xl space-y-4 relative overflow-hidden group">
+            <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-none space-y-4 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
                 <TrendingUp size={120} />
               </div>
@@ -142,20 +143,16 @@ export const CryptoYieldCalculator: React.FC<{ name: string }> = ({ name }) => {
                   Profits Reclaimed: +${interestEarned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-            </div>
-
-            <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
-              <p className="text-[10px] text-gray-400 italic leading-relaxed text-center">
-                "Don't work for money. Make your capital work for you in the high-yield sovereign layer."
-              </p>
-              <a 
-                href={AFFILIATE_LINKS.nexo} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-full py-3 bg-white text-black rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-green-400 transition-all flex items-center justify-center gap-2"
-              >
-                Join Nexo — Earn 10% APY <ExternalLink size={12} />
-              </a>
+              <div className="pt-4 mt-4 border-t border-green-500/10">
+                <a 
+                  href={AFFILIATE_LINKS.nexo} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-none text-[9px] font-black uppercase tracking-widest hover:bg-purple-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Terminal size={12} /> INITIALIZE SOVEREIGN VAULT
+                </a>
+              </div>
             </div>
           </div>
         )}

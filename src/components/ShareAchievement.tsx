@@ -60,28 +60,28 @@ SYSTEM_HASH: QW_X10_STABLE
   };
 
   return (
-    <div className="glass-panel p-8 rounded-3xl border-gold shadow-[0_0_50px_rgba(212,175,55,0.15)] bg-gradient-to-br from-gold/10 to-transparent relative overflow-hidden">
+    <div className="glass-panel p-8 rounded-none border-[#d4af37] shadow-[0_0_50px_rgba(212,175,55,0.15)] bg-gradient-to-br from-[#d4af37]/10 to-transparent relative overflow-hidden">
       <div className="absolute top-0 right-0 p-4 opacity-10">
         <ShieldCheck size={120} />
       </div>
       
       <div className="relative z-10 space-y-6">
         <div className="flex items-center gap-4">
-          <div className="p-4 bg-gold rounded-2xl text-black">
+          <div className="p-4 bg-[#d4af37] rounded-none text-black">
             <Trophy size={32} />
           </div>
           <div>
             <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Milestone_Reached</h2>
-            <p className="text-gold font-mono text-[10px] uppercase tracking-[0.4em]">Node_10: Stabilization_Pulse</p>
+            <p className="text-[#d4af37] font-mono text-[10px] uppercase tracking-[0.4em]">Node_10: Stabilization_Pulse</p>
           </div>
         </div>
 
-        <div className="p-6 bg-black/40 border border-gold/20 rounded-2xl">
+        <div className="p-6 bg-black/40 border border-[#d4af37]/20 rounded-none">
           <div className="text-[8px] text-muted uppercase tracking-widest mb-4">Unit_Performance_Report</div>
           <div className="space-y-3">
              <div className="flex justify-between border-b border-white/5 pb-2">
                 <span className="text-[10px] text-white/60 uppercase font-mono">Designation:</span>
-                <span className="text-[10px] text-gold font-black uppercase font-mono">{name}</span>
+                <span className="text-[10px] text-[#d4af37] font-black uppercase font-mono">{name}</span>
              </div>
              <div className="flex justify-between border-b border-white/5 pb-2">
                 <span className="text-[10px] text-white/60 uppercase font-mono">Sovereignty_Lvl:</span>
@@ -97,13 +97,13 @@ SYSTEM_HASH: QW_X10_STABLE
         <div className="flex gap-4 relative">
           <button 
             onClick={share}
-            className="flex-1 py-4 bg-gold text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex-1 py-4 bg-[#d4af37] text-black rounded-none text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <Share2 size={16} /> Broadcast Achievement
           </button>
           <button 
             onClick={downloadReport}
-            className="p-4 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/20 transition-all flex items-center justify-center"
+            className="p-4 bg-white/5 border border-white/10 rounded-none text-white hover:bg-white/20 transition-all flex items-center justify-center"
             title="Download Performance Report"
           >
             <Download size={16} />
@@ -117,7 +117,7 @@ SYSTEM_HASH: QW_X10_STABLE
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="absolute -top-12 left-0 right-0 flex justify-center pointer-events-none"
               >
-                <div className="bg-green-500 text-black px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg">
+                <div className="bg-green-500 text-black px-4 py-1.5 rounded-none text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg">
                   <Check size={12} /> {toastMsg}
                 </div>
               </motion.div>

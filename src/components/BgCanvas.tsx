@@ -86,7 +86,7 @@ export const BgCanvas: React.FC = () => {
 
     resize();
     window.addEventListener('resize', resize);
-    for (let i = 0; i < 55; i++) particles.push(new BgParticle());
+    for (let i = 0; i < 30; i++) particles.push(new BgParticle());
     animate();
 
     return () => {

@@ -25,16 +25,16 @@ import {
   Table as TableIcon,
   ShieldCheck,
   Scissors,
-  Settings,
   RefreshCcw,
   PenTool,
   X,
   Eye,
-  Scan
+  Scan,
+  Terminal,
+  AlertTriangle
 } from 'lucide-react';
-import { PROTOCOL_DAYS, ProtocolDay, AFFILIATE_LINKS, LOCALE_CONFIG } from './protocolData';
+import { PROTOCOL_DAYS, ProtocolDay, LOCALE_CONFIG } from './protocolData';
 import { sounds } from './lib/audio';
-import { getArchitectAdvice } from './lib/gemini';
 import { IpLeakTest } from './components/IpLeakTest';
 import { BgCanvas } from './components/BgCanvas';
 import { ActivityFeed } from './components/ActivityFeed';
@@ -44,9 +44,14 @@ import { SubKiller } from './components/SubKiller';
 import { SovereignJournal } from './components/SovereignJournal';
 import { CryptoYieldCalculator } from './components/CryptoYieldCalculator';
 import { FootprintScanner } from './components/FootprintScanner';
-import { NeuralLink } from './components/NeuralLink';
 import { SovereignMap } from './components/SovereignMap';
 import { ShareAchievement } from './components/ShareAchievement';
+import { StatsDashboard } from './components/StatsDashboard';
+import { NetworkTerminal } from './components/NetworkTerminal';
+import { DataVault } from './components/DataVault';
+import { QuietMoneyPortal } from './components/QuietMoneyPortal';
+import { OpSecMatrix } from './components/OpSecMatrix';
+import html2canvas from 'html2canvas';
 
 interface GameState {
   name: string;
@@ -62,6 +67,8 @@ interface GameState {
   streak: number;
   lastActive: string | null;
 }
+
+import { requestNotificationPermission, sendLocalNotification } from './utils/notifications';
 
 const AVATARS = [
   { id: 'm1', label: 'PHANTOM_M', icon: '👤' },
@@ -82,19 +89,115 @@ export default function App() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [registrationAvatar, setRegistrationAvatar] = useState('m1');
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [assistantMsg, setAssistantMsg] = useState('');
-  const [isAssistantLoading, setIsAssistantLoading] = useState(false);
-  const [showAssistant, setShowAssistant] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [activeStepIdx, setActiveStepIdx] = useState<number | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [viewMode, setViewMode] = useState<'mission' | 'roadmap'>('mission');
+  const [viewMode, setViewMode] = useState<'mission' | 'roadmap' | 'dashboard' | 'vault'>('roadmap');
   const [audioInitialized, setAudioInitialized] = useState(false);
+  const [vfxEnabled, setVfxEnabled] = useState(true);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [hasClickedLink, setHasClickedLink] = useState(() => {
-    return localStorage.getItem('day5_link_clicked') === 'true';
-  });
+  const [hasClickedLink, setHasClickedLink] = useState(false);
+  const [devClicks, setDevClicks] = useState(0);
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [showDevAuth, setShowDevAuth] = useState(false);
+  const [devPassword, setDevPassword] = useState("");
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  
+  useEffect(() => {
+    if ('Notification' in window) {
+      setPushEnabled(Notification.permission === 'granted');
+    }
+  }, []);
+  
+  const handleExportSave = () => {
+    if (!gameState) return;
+    const saveStr = btoa(JSON.stringify(gameState));
+    navigator.clipboard.writeText(saveStr).then(() => {
+      alert("NEURAL BACKUP COPIED TO CLIPBOARD.");
+    });
+  };
+
+  const handleDownloadCertificate = async () => {
+    const certNode = document.getElementById('certificate-node');
+    if (!certNode) return;
+    try {
+      const canvas = await html2canvas(certNode, {
+        backgroundColor: '#000',
+        scale: 2, // High resolution
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `Sovereignty_Certificate_${gameState?.name || 'Unit'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to generate certificate image:', err);
+      alert('Failed to generate image.');
+    }
+  };
+
+  const handleImportSave = () => {
+    const backup = prompt("ENTER NEURAL BACKUP HASH:");
+    if (!backup) return;
+    try {
+      const parsed = JSON.stringify(JSON.parse(atob(backup)));
+      const stateObj = JSON.parse(parsed);
+      if (stateObj.name && stateObj.day) {
+         setGameState(stateObj);
+         localStorage.setItem(`qw_save_${stateObj.name}`, parsed);
+         localStorage.setItem('qw_currentUser', stateObj.name);
+         alert("NEURAL BACKUP RESTORED SUCCESSFULLY.");
+         window.location.reload();
+      } else {
+        alert("CORRUPTED BACKUP DATA.");
+      }
+    } catch(e) {
+      alert("INVALID NEURAL BACKUP HASH.");
+    }
+  };
+
+  const handleHardReset = () => {
+    if (confirm("WARNING: OVERWRITING LOCAL STORAGE. THIS WILL DELETE ALL CAPTURED SOVEREIGNTY. PROCEED?")) {
+      const keys = Object.keys(localStorage);
+      keys.forEach(k => {
+        if (k.startsWith('qw_')) localStorage.removeItem(k);
+      });
+      window.location.reload();
+    }
+  };
+
+  const handleDevClick = () => {
+    setDevClicks(prev => {
+      if (prev + 1 >= 5 && !isDevMode) {
+        setShowDevAuth(true);
+        return 0;
+      }
+      return prev + 1;
+    });
+  };
+
+  const handleDevAuthSubmit = (e: any) => {
+    e.preventDefault();
+    const pwd = devPassword.trim().toLowerCase();
+    if (pwd === "quiet" || pwd === "admin" || pwd === "dev" || pwd === "krakow") {
+       setIsDevMode(true);
+       setShowDevAuth(false);
+       setDevPassword("");
+       console.log("DEV MODE UNLOCKED");
+       setGameState(gs => {
+         if (!gs) return gs;
+         return {
+           ...gs,
+           unlocked: PROTOCOL_DAYS.map(d => d.day)
+         };
+       });
+    } else {
+      setDevPassword("");
+      setShowDevAuth(false);
+    }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -122,11 +225,29 @@ export default function App() {
       try {
         const s = JSON.parse(saved);
         const today = new Date().toDateString();
+        const lastTimestamp = s.lastActive ? new Date(s.lastActive).getTime() : 0;
         const last = s.lastActive ? new Date(s.lastActive).toDateString() : null;
+        
         if (last && last !== today) {
           const yesterday = new Date(Date.now() - 86400000).toDateString();
-          if (last === yesterday) s.streak = (s.streak || 0) + 1;
-          else s.streak = 1;
+          if (last === yesterday) {
+            s.streak = (s.streak || 0) + 1;
+          } else {
+            s.streak = 1;
+            // Missed a day penalty
+            if (lastTimestamp && Date.now() - lastTimestamp > 48 * 60 * 60 * 1000) {
+              if (s.day > 1) {
+                const prevDay = s.day - 1; // Basic fallback
+                s.day = prevDay > 0 ? prevDay : 1;
+                s.sovereignty = Math.max(0, (s.sovereignty || 0) - 10);
+                s.focus = Math.max(0, (s.focus || 0) - 5);
+                s.stepsCompleted = [];
+                setTimeout(() => {
+                  alert(`PROTOCOL BREACH. You failed to report within 48h.\n\nPenalty Applied:\n- Downgraded to Day ${s.day}\n- Lost 10 Sovereignty\n- Lost 5 Focus`);
+                }, 1000);
+              }
+            }
+          }
         }
         if (!s.unlocked) s.unlocked = [s.day || 1];
         if (!s.stepsCompleted) s.stepsCompleted = [];
@@ -147,6 +268,7 @@ export default function App() {
         ...gameState,
         lastActive: new Date().toISOString()
       }));
+      sounds.setDay(gameState.day);
     }
   }, [gameState]);
 
@@ -160,7 +282,6 @@ export default function App() {
 
   const startBooting = () => {
     handleInteraction();
-    setFlashActive(true);
     setIsBooting(true);
     sounds.boot();
     
@@ -198,14 +319,29 @@ export default function App() {
     }
   };
 
-  const resetProtocol = () => {
-    if (window.confirm("ARE YOU SURE? THIS WILL ERASE ALL SOVEREIGN PROGRESS FOR THIS UNIT.")) {
-      const key = `qw_state_${nameInput.toUpperCase()}`;
-      localStorage.removeItem(key);
-      setGameState(null);
-      setScreen('intro');
-      window.location.reload();
-    }
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+
+  const requestReset = () => {
+    setIsConfirmingReset(true);
+  };
+
+  const executeReset = () => {
+    const targetName = gameState ? gameState.name : nameInput.trim().toUpperCase();
+    const key = `qw_state_${targetName}`;
+    localStorage.removeItem(key);
+    // Let's also do a hard reset to be safe
+    const keys = Object.keys(localStorage);
+    keys.forEach(k => {
+      if (k.startsWith(`qw_`) && k.includes(targetName)) localStorage.removeItem(k);
+    });
+    setGameState(null);
+    setScreen('intro');
+    setIsConfirmingReset(false);
+    window.location.reload();
+  };
+
+  const cancelReset = () => {
+    setIsConfirmingReset(false);
   };
 
   const confirmOnboarding = () => {
@@ -267,7 +403,7 @@ export default function App() {
     if (!day) return;
 
     // Special Data Check for Day 1
-    if (gameState.day === 1) {
+    if (gameState.day === 1 && !isDevMode) {
       const auditData = localStorage.getItem(`qw_audit_${gameState.name}`);
       const parsedAudit = auditData ? JSON.parse(auditData) : [];
       // Require at least 5 meaningful entries for Day 1
@@ -279,23 +415,24 @@ export default function App() {
     }
 
     // Requirement: All steps must be checked
-    if (day.steps.length > gameState.stepsCompleted.length) {
+    if (day.steps.length > gameState.stepsCompleted.length && !isDevMode) {
       sounds.glitch();
       alert("UNFINISHED_OBJECTIVES. STABILIZE_ALL_NODES_BEFORE_PROCEEDING.");
       return;
     }
 
     // Special Data Check for Day 5 (IP Scan)
-    if (gameState.day === 5) {
+    if (gameState.day === 5 && !isDevMode) {
       const ipResult = localStorage.getItem('day5_ip_result');
       if (!ipResult) {
         sounds.glitch();
-        alert("CRITICAL_ERROR: PERIMETER_UNSCANNED. YOU_MUST_RUN_THE_IP_LEAK_TEST_BEFORE_PROCEEDING.\n\n(RU: Вам нужно запустить IP Leak Test в главном окне перед тем, как продолжить.)");
+        alert("CRITICAL_ERROR: PERIMETER_UNSCANNED. YOU_MUST_RUN_THE_IP_LEAK_TEST_BEFORE_PROCEEDING.");
         return;
       }
     }
 
     if (day.verificationGate?.required) {
+      setHasClickedLink(localStorage.getItem(`qw_link_clicked_${gameState.day}`) === 'true');
       setShowVerification(true);
     } else {
       finalizeDay();
@@ -318,6 +455,15 @@ export default function App() {
     setGameState(prev => {
       if (!prev) return null;
       const nextDayNum = prev.day + 1;
+      
+      // Attempt to schedule daily background reminder (if permissions granted)
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        // Here we'd send a request to our Push Service / Service Worker
+        // For local-only, we immediately show it after 15s to demonstrate,
+        // but typically this would hook into Web Push API or Local Notifications.
+        /* sendLocalNotification(`День ${nextDayNum} Доступен`, `Протокол ждет. Продолжите развитие.`); */
+      }
+      
       return {
         ...prev,
         day: nextDayNum,
@@ -333,16 +479,6 @@ export default function App() {
     setScreen('game');
   };
 
-  const askMentor = async () => {
-    if (!gameState) return;
-    setIsAssistantLoading(true);
-    setShowAssistant(true);
-    const day = PROTOCOL_DAYS.find(d => d.day === gameState.day);
-    const advice = await getArchitectAdvice(day?.title || "Unknown", gameState);
-    setAssistantMsg(advice);
-    setIsAssistantLoading(false);
-    sounds.hint();
-  };
 
   const handleVerification = () => {
     if (!gameState) return;
@@ -361,135 +497,43 @@ export default function App() {
     }
     setShowVerification(false);
     setHasClickedLink(false);
-    localStorage.removeItem('day5_link_clicked');
+    if (gameState) {
+      localStorage.removeItem(`qw_link_clicked_${gameState.day}`);
+    }
     finalizeDay();
   };
 
   const currentDay = useMemo(() => PROTOCOL_DAYS.find(d => d.day === (gameState?.day || 1)), [gameState?.day]);
 
+  const ConfirmResetModal = () => (
+    <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-6">
+      <div className="max-w-md w-full glass-panel p-8 border border-red-500/30 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+        <h2 className="text-xl font-mono text-red-500 tracking-[0.3em] uppercase font-black">SYSTEM PURGE</h2>
+        <p className="text-xs text-white/70 uppercase tracking-widest leading-relaxed font-mono">
+          Are you sure? This will unconditionally erase all sovereign progress and identity data.
+        </p>
+        <div className="flex flex-col gap-3 pt-4">
+          <button 
+            onClick={executeReset}
+            className="w-full py-4 bg-red-500/10 text-red-500 text-[10px] border border-red-500/30 hover:bg-red-500 hover:text-black transition-all uppercase tracking-[0.3em] font-black"
+          >
+            CONFIRM PURGE
+          </button>
+          <button 
+            onClick={cancelReset}
+            className="w-full py-4 text-[10px] text-white/40 border border-white/5 hover:bg-white/5 hover:text-white transition-colors uppercase tracking-[0.3em]"
+          >
+            ABORT
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (screen === 'intro') {
     if (!isBooting && bootLog.length === 0) {
       return (
-        <div 
-          className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden cursor-pointer"
-          onClick={handleInteraction}
-        >
-          {flashActive && <div className="fixed inset-0 z-[200] bg-white animate-whiteout" />}
-          <div className="absolute inset-0 grid-background opacity-40" />
-          
-          {/* Floating Data Decorators */}
-          <div className="absolute inset-0 pointer-events-none opacity-20 hidden md:block select-none">
-            <div className="absolute top-[30%] left-[20%] font-mono text-[8px] text-gold space-y-1">
-              <div>hexE8366</div>
-              <div>hexE8556</div>
-              <div className="mt-4">43</div>
-              <div>75S</div>
-              <div>09</div>
-            </div>
-            <div className="absolute top-[30%] left-[28%] font-mono text-[8px] text-white">
-              <div className="bg-gold/40 px-2 py-0.5 rounded text-black font-bold mb-1">5004</div>
-              <div>Hex68553</div>
-              <div className="mt-4 text-gold/50">TUN_6890</div>
-              <div className="text-gold/50">STH_H000</div>
-              <div className="text-gold/50">SIW_F1_4UA</div>
-            </div>
-            <div className="absolute top-[30%] right-[32%] font-mono text-[8px] text-white text-right">
-              <div className="text-gold/50">20003</div>
-              <div className="text-gold font-bold border-b border-gold/40 inline-block mb-1">ST60S</div>
-              <div className="mt-4 flex gap-2 justify-end">
-                <span>00088</span>
-                <span>2000</span>
-                <span>00000</span>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <span>90028</span>
-                <span>2537</span>
-                <span>53850</span>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <span>86028</span>
-                <span>2060</span>
-                <span>52003</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="vignette opacity-80" />
-          <div className="crt-overlay" />
-          <BgCanvas />
-
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              x: mousePos.x * 0.5,
-              y: mousePos.y * 0.5
-            }}
-            className="text-center z-10"
-          >
-             <div className="mb-12 relative inline-block">
-                <motion.div 
-                  animate={{ 
-                    rotate: 360,
-                    x: mousePos.x * -0.2,
-                    y: mousePos.y * -0.2
-                  }}
-                  transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                  className="w-48 h-48 md:w-64 md:h-64 rounded-full border-[1px] border-gold/20 shadow-[0_0_80px_rgba(212,175,55,0.1)] flex items-center justify-center relative bg-zinc-900/20 backdrop-blur-sm"
-                >
-                  <div className="absolute inset-2 border border-gold/5 rounded-full" />
-                  <motion.div 
-                    animate={{ opacity: [0.1, 0.3, 0.1] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                    className="absolute inset-8 border border-gold/10 rounded-full" 
-                  />
-                </motion.div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <motion.div 
-                     animate={{ 
-                       scale: [1, 1.1, 1],
-                       boxShadow: ["0 0 20px rgba(212,175,55,0.3)", "0 0 50px rgba(212,175,55,0.6)", "0 0 20px rgba(212,175,55,0.3)"]
-                     }}
-                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                     className="p-5 md:p-8 bg-zinc-950 rounded-full border border-gold/40"
-                   >
-                     <Zap size={36} className="text-gold" fill="#d4af37" />
-                   </motion.div>
-                </div>
-             </div>
-
-             <motion.h1 
-               initial={{ y: 20, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               transition={{ delay: 0.3 }}
-               className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-gold to-gold-dim tracking-[0.05em] mb-4 uppercase italic drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
-             >
-               QUIET_WEALTH
-             </motion.h1>
-             <div className="h-0.5 w-32 md:w-56 bg-gold/60 mx-auto -mt-2 mb-12 shadow-[0_0_20px_rgba(212,175,55,0.6)]" />
-
-             <motion.button 
-               whileHover={{ scale: 1.05, background: 'rgba(212,175,55,0.1)' }}
-               whileTap={{ scale: 0.98 }}
-               onClick={startBooting}
-               onMouseEnter={() => sounds.hint()}
-               className="group relative px-12 md:px-16 py-4 md:py-6 bg-zinc-900 border border-zinc-700/50 rounded-full overflow-hidden transition-all shadow-[0_30px_60px_rgba(0,0,0,0.6)] inline-flex items-center justify-center mx-auto"
-             >
-               <div className="absolute inset-0 bg-gold/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-               <span className="relative z-10 text-[10px] md:text-[12px] font-black text-white tracking-[0.6em] uppercase">
-                 Initiate Protocol
-               </span>
-             </motion.button>
-          </motion.div>
-
-          <div className="absolute bottom-10 left-10 text-[7px] text-muted tracking-[0.4em] uppercase opacity-40 font-mono hidden md:flex items-center gap-2">
-            ARCHITECT_CORE_V4.2 // NEURAL_LINK_READY
-          </div>
-          
-          <div className="absolute bottom-10 right-10 text-[7px] text-muted tracking-[0.4em] uppercase opacity-40 font-mono hidden md:flex items-center gap-2">
-            SECURED_TERMINAL_001 // v1.3_STANDBY
-          </div>
-        </div>
+        <QuietMoneyPortal onUnlock={startBooting} onInteract={handleInteraction} />
       );
     }
 
@@ -497,7 +541,6 @@ export default function App() {
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black relative overflow-hidden">
         <div className="absolute inset-0 grid-background opacity-20" />
         <BgCanvas />
-        {flashActive && <div className="fixed inset-0 z-[200] bg-white animate-whiteout" />}
         <div className="vignette opacity-70" />
         <div className="crt-overlay" />
         
@@ -510,14 +553,14 @@ export default function App() {
                <motion.div 
                  animate={{ opacity: [0.4, 0.8, 0.4] }}
                  transition={{ duration: 4, repeat: Infinity }}
-                 className="flex items-end gap-1.5 px-6 py-3 border border-gold/10 rounded-full bg-gold/5 h-full"
+                 className="flex items-end gap-1.5 px-6 py-3 border border-[#d4af37]/10 rounded-none bg-[#d4af37]/5 h-full"
                >
                   {[...Array(12)].map((_, i) => (
                     <motion.div 
                       key={i} 
                       animate={{ height: [4, 16, 4] }}
                       transition={{ duration: 2, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" }}
-                      className="w-1 bg-gold/40 shadow-[0_0_8px_rgba(212,175,55,0.2)] rounded-full" 
+                      className="w-1 bg-[#d4af37]/40 shadow-[0_0_8px_rgba(212,175,55,0.2)] rounded-none" 
                     />
                   ))}
                </motion.div>
@@ -526,97 +569,57 @@ export default function App() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gold tracking-[0.15em] md:tracking-[0.25em] uppercase italic drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] mb-4"
+                className="text-4xl md:text-7xl font-sans tracking-[0.2em] md:tracking-[0.3em] uppercase drop-shadow-[0_0_20px_rgba(212,175,55,0.3)] mb-4 text-[#d4af37]"
               >
                 NEURAL ACCESS
               </motion.h1>
-          <p className="text-gold/60 text-[8px] md:text-[10px] tracking-[0.5em] md:tracking-[0.8em] uppercase font-bold mt-4">
+          <p className="text-[#d4af37]/60 text-[10px] md:text-[12px] tracking-[0.8em] md:tracking-[1em] uppercase mt-4 font-mono">
             CONNECTION_STABLE // READY_FOR_SYNC
           </p>
         </motion.div>
 
         <div className="z-10 relative w-full max-w-2xl flex flex-col items-center justify-center gap-12">
-          {/* Quantum Core Assembly - Static and Calm */}
+          {/* Quantum Core Assembly - Minimalized for strict terminal vibe */}
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ 
               scale: 1, 
               opacity: 1,
-              x: mousePos.x * 0.3,
-              y: mousePos.y * 0.3  
+              x: mousePos.x * 0.05,
+              y: mousePos.y * 0.05  
             }}
             transition={{ delay: 0.2 }}
-            className="relative w-64 h-64 md:w-96 md:h-96 flex items-center justify-center"
+            className="relative w-72 h-72 flex items-center justify-center"
           >
-            {/* Outer Rings - Slow, Smooth Rotation */}
-            {[...Array(4)].map((_, i) => (
-              <motion.div
-                key={i}
-                animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
-                transition={{ duration: 40 + i * 20, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 border border-gold/10 rounded-full"
-                style={{ scale: 1 - i * 0.15 }}
-              >
-                {/* Orbital nodes around rings */}
-                {i < 3 && (
-                  <motion.div 
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
-                    transition={{ duration: 2 + i, repeat: Infinity }}
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-gold rounded-full shadow-[0_0_10px_#d4af37]"
-                  />
-                )}
-              </motion.div>
-            ))}
-
-            {/* Neural Pulse Field - Very Subtle */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-gold/0 via-gold/5 to-gold/0 rounded-full blur-[120px]" />
-
-            {/* Core Processor Element - Specialized Shield Design */}
-            <div className="relative p-16 md:p-24 bg-black border border-gold/10 rounded-full shadow-[0_0_120px_rgba(212,175,55,0.1)] flex items-center justify-center overflow-hidden">
-               {/* Inner spinning data arc */}
-               <motion.div 
-                 animate={{ rotate: 360 }}
-                 transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                 className="absolute inset-4 border-2 border-gold/40 border-dashed rounded-full pointer-events-none"
-               />
-               <motion.div 
-                 animate={{ rotate: -360 }}
-                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                 className="absolute inset-10 border border-white/5 border-dotted rounded-full pointer-events-none"
-               />
-               
+            {/* Core Processor Element */}
+            <div className="relative p-16 bg-black/60 border border-[#d4af37]/10 flex items-center justify-center overflow-hidden group">
+               <div className="absolute inset-0 bg-[#d4af37]/5 origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-700 ease-in-out" />
                <motion.div
                 animate={{ 
-                  scale: [1, 1.02, 1],
-                  filter: ["brightness(1) contrast(1)", "brightness(1.2) contrast(1.1)", "brightness(1) contrast(1)"] 
+                  scale: [1, 1.05, 1],
                 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                 className="flex items-center justify-center relative z-10"
               >
-                <div className="relative">
-                  <Shield size={90} className="text-gold/60" strokeWidth={0.5} />
+                <div className="relative border border-[#d4af37]/20 p-8 rounded-none">
+                  <Shield size={70} className="text-[#d4af37]/80" strokeWidth={0.5} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
                       animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      transition={{ duration: 3, repeat: Infinity }}
                     >
-                      <Lock size={28} className="text-gold mt-1" strokeWidth={1} />
+                      <Lock size={20} className="text-[#d4af37] mt-1" strokeWidth={1} />
                     </motion.div>
                   </div>
                 </div>
               </motion.div>
-
-              {/* Background scanning line inside the core */}
-              <motion.div 
-                animate={{ top: ['-50%', '150%'] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute left-0 right-0 h-[2px] bg-gold/20 blur-sm shadow-[0_0_20px_#d4af37]"
-              />
             </div>
             
-            {/* Geometric Accents */}
-            <div className="absolute -top-10 -left-10 w-20 h-20 border-t-2 border-l-2 border-gold/10 rounded-tl-3xl" />
-            <div className="absolute -bottom-10 -right-10 w-20 h-20 border-b-2 border-r-2 border-gold/10 rounded-br-3xl" />
+            {/* Minimal Geometric Accents */}
+            <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-[#d4af37]/30" />
+            <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-[#d4af37]/30" />
+            <div className="absolute -top-4 -right-4 w-12 h-12 border-t-2 border-r-2 border-[#d4af37]/10" />
+            <div className="absolute -bottom-4 -left-4 w-12 h-12 border-b-2 border-l-2 border-[#d4af37]/10" />
           </motion.div>
 
           <motion.div 
@@ -626,7 +629,7 @@ export default function App() {
             className="text-center space-y-10 w-full max-w-lg mt-4"
           >
             <p className="text-gray-400 italic text-[11px] md:text-[14px] leading-relaxed tracking-wide">
-              "We are the <span className="text-gold font-bold">Silence.</span> To join us, you must leave the <span className="text-gold font-bold">Noise.</span>"
+              "We are the <span className="text-[#d4af37] font-bold">Silence.</span> To join us, you must leave the <span className="text-[#d4af37] font-bold">Noise.</span>"
             </p>
 
             <AnimatePresence mode="wait">
@@ -636,7 +639,7 @@ export default function App() {
                 className="space-y-6"
               >
                 <div className="relative group max-w-sm mx-auto">
-                  <div className="absolute -top-6 left-0 right-0 text-[7px] text-gold/30 tracking-[0.5em] uppercase text-center font-mono">
+                  <div className="absolute -top-8 left-0 right-0 text-[9px] text-[#d4af37]/40 tracking-[0.8em] uppercase text-center font-mono">
                     AWAITING_ID_STRING
                   </div>
                   <input 
@@ -649,25 +652,25 @@ export default function App() {
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && nameInput.trim() && startProtocol()}
                     placeholder="UNIT_IDENTIFIER" 
-                    className="w-full bg-transparent border-b border-gold/10 p-5 font-mono text-xl md:text-2xl text-center text-white outline-none focus:border-gold/60 transition-all placeholder:text-gold/5 uppercase tracking-[0.2em]"
+                    className="w-full bg-transparent border-b border-[#d4af37]/20 p-5 font-sans text-xl md:text-2xl text-center text-[#d4af37] outline-none focus:border-[#d4af37]/80 transition-all placeholder:text-[#d4af37]/10 uppercase tracking-[0.4em]"
                   />
-                  <div className="absolute bottom-0 left-0 h-0.5 bg-gold shadow-[0_0_10px_#d4af37] origin-center scale-x-0 group-focus-within:scale-x-100 transition-transform duration-700" />
+                  <div className="absolute bottom-0 left-0 h-[2px] bg-[#d4af37] shadow-[0_0_15px_#d4af37] origin-center scale-x-0 group-focus-within:scale-x-100 transition-transform duration-700" />
                 </div>
 
                 <motion.button 
-                  whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(212,175,55,0.2)" }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={startProtocol}
                   disabled={!nameInput.trim()}
-                  className="group relative w-full max-w-sm mx-auto py-5 bg-zinc-900 border border-zinc-700/50 text-white font-black text-[10px] md:text-[12px] tracking-[0.6em] uppercase rounded-full overflow-hidden transition-all disabled:opacity-10 shadow-[0_30px_60px_rgba(0,0,0,0.4)] flex items-center justify-center gap-3"
+                  className="group relative w-full max-w-sm mx-auto py-6 bg-black border border-[#d4af37]/30 text-[#d4af37] font-sans text-[12px] md:text-[14px] tracking-[0.4em] uppercase overflow-hidden transition-all disabled:opacity-10 shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center justify-center gap-4 hover:border-[#d4af37] hover:bg-[#d4af37]/5"
                 >
-                  <div className="absolute inset-0 bg-gold/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Zap size={16} fill="white" className="relative z-10" />
-                  <span className="relative z-10">Authorize Access</span>
+                  <div className="absolute inset-0 bg-[#d4af37]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Zap size={18} className="relative z-10 text-[#d4af37]" />
+                  <span className="relative z-10 drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]">Authorize Access</span>
                 </motion.button>
 
                 <button 
-                  onClick={resetProtocol}
+                  onClick={requestReset}
                   className="text-[8px] text-muted hover:text-red-400 transition-colors uppercase tracking-[0.5em] opacity-40 hover:opacity-100"
                 >
                   Purge System Identity
@@ -677,7 +680,9 @@ export default function App() {
           </motion.div>
         </div>
 
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-8 md:gap-16 text-[7px] text-gold/20 tracking-[0.5em] uppercase font-mono hidden md:flex pointer-events-none whitespace-nowrap">
+        {isConfirmingReset && <ConfirmResetModal />}
+
+        <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-8 md:gap-16 text-[7px] text-[#d4af37]/20 tracking-[0.5em] uppercase font-mono hidden md:flex pointer-events-none whitespace-nowrap">
           <span>ARCHITECT_CORE_V4.2</span>
           <span>//</span>
           <span>SECURED_TERMINAL_001</span>
@@ -688,41 +693,58 @@ export default function App() {
 
   if (screen === 'onboarding') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-bg relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020202] relative overflow-hidden font-sans">
          <BgCanvas />
-         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full glass-panel p-8 rounded-3xl space-y-8 text-center relative z-10">
-            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center justify-center gap-2">
-              <Award className="text-gold" /> Select Your Archetype
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-               {AVATARS.map(av => (
-                 <button 
-                   key={av.id}
-                   onClick={() => {
-                     sounds.step();
-                     setRegistrationAvatar(av.id);
-                   }}
-                   className={`p-4 rounded-xl border transition-all flex flex-col items-center justify-center gap-2 ${registrationAvatar === av.id ? 'bg-gold/10 border-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'bg-white/5 border-white/10 hover:border-white/20 opacity-60 hover:opacity-100'}`}
-                 >
-                    <div className="text-2xl">{av.icon}</div>
-                    <div className="text-[7px] font-black uppercase tracking-widest text-white leading-tight">{av.label}</div>
-                 </button>
-               ))}
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl w-full p-12 bg-black border border-[#d4af37]/20 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative z-10">
+            {/* Corner Decorators */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#d4af37]/30" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#d4af37]/30" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#d4af37]/30" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#d4af37]/30" />
+
+            <div className="text-center space-y-12">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-sans text-[#d4af37] tracking-[0.3em] uppercase drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                  SELECT ARCHETYPE
+                </h2>
+                <div className="w-16 h-px bg-[#d4af37]/40 mx-auto mt-6" />
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                 {AVATARS.map(av => (
+                   <button 
+                     key={av.id}
+                     onClick={() => {
+                       sounds.step();
+                       setRegistrationAvatar(av.id);
+                     }}
+                     className={`p-6 border transition-all duration-500 flex flex-col items-center justify-center gap-4 relative group overflow-hidden ${registrationAvatar === av.id ? 'bg-[#d4af37]/10 border-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.15)]' : 'bg-black border-[#d4af37]/10 hover:border-[#d4af37]/40 opacity-70 hover:opacity-100'}`}
+                   >
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#d4af37]/5 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
+                      <div className="text-4xl relative z-10 grayscale group-hover:grayscale-0">{av.icon}</div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#d4af37] leading-tight relative z-10">{av.label}</div>
+                   </button>
+                 ))}
+              </div>
+
+              <div className="space-y-4">
+                 <div className="text-[10px] text-[#d4af37]/50 uppercase tracking-[0.4em] font-mono">NEURAL_DESYNC_STATUS</div>
+                 <div className="p-6 bg-black border border-[#d4af37]/10 text-center relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#d4af37]/30" />
+                    <p className="text-[11px] text-[#d4af37]/80 uppercase tracking-widest leading-relaxed font-sans">
+                      Standard jurisdictions purged.<br/>Neural link isolated from state tracking.
+                    </p>
+                 </div>
+              </div>
+
+              <button 
+                onClick={confirmOnboarding}
+                className="w-full py-6 bg-transparent border border-[#d4af37]/40 hover:border-[#d4af37] text-[#d4af37] font-sans uppercase text-sm tracking-[0.4em] transition-all hover:bg-[#d4af37]/10 flex items-center justify-center gap-3 relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-[#d4af37]/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <span className="relative z-10 drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]">INITIALIZE NODE</span>
+              </button>
             </div>
-            <div className="space-y-4">
-               <div className="text-[10px] font-bold text-muted uppercase tracking-widest">NEURAL_DESYNC_STATUS</div>
-               <div className="p-4 bg-gold/5 border border-gold/10 rounded-xl text-left">
-                  <p className="text-[9px] text-muted uppercase italic tracking-widest leading-relaxed">
-                    "Standard jurisdictions purged. Neural link isolated from state tracking."
-                  </p>
-               </div>
-            </div>
-            <button 
-              onClick={confirmOnboarding}
-              className="w-full py-4 bg-gold text-black font-black uppercase text-xs tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-gold/20"
-            >
-              Confirm & Launch Protocol
-            </button>
          </motion.div>
       </div>
     );
@@ -730,26 +752,26 @@ export default function App() {
 
   if (screen === 'loading') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-bg relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-[#020202] relative overflow-hidden">
         <BgCanvas />
         <div className="crt-overlay" />
         
         <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
-          <div className="text-8xl font-black text-gold animate-pulse drop-shadow-[0_0_20px_rgba(212,175,55,0.3)]">QW</div>
+          <div className="text-8xl font-black text-[#d4af37] animate-pulse drop-shadow-[0_0_20px_rgba(212,175,55,0.3)]">QW</div>
           <div className="w-full space-y-2">
-            <div className="flex justify-between text-[8px] font-mono text-gold uppercase tracking-widest">
+            <div className="flex justify-between text-[8px] font-mono text-[#d4af37] uppercase tracking-widest">
                <span>Loading System Modules</span>
                <span>{loadingProgress}%</span>
             </div>
-            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <motion.div className="h-full bg-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]" style={{ width: `${loadingProgress}%` }} />
+            <div className="w-full h-1 bg-white/5 rounded-none overflow-hidden border border-white/5">
+              <motion.div className="h-full bg-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.5)]" style={{ width: `${loadingProgress}%` }} />
             </div>
           </div>
           
-          <div className="w-full glass-panel p-4 rounded-xl font-mono text-[7px] text-muted space-y-1 h-32 overflow-hidden relative">
+          <div className="w-full glass-panel p-4 rounded-none font-mono text-[7px] text-muted space-y-1 h-32 overflow-hidden relative">
              <div className="animate-pulse flex items-center gap-2 mb-2">
-                <span className="w-1 h-1 bg-gold rounded-full" />
-                <span className="text-gold">DIAGNOSTIC_IN_PROGRESS</span>
+                <span className="w-1 h-1 bg-[#d4af37] rounded-none" />
+                <span className="text-[#d4af37]">DIAGNOSTIC_IN_PROGRESS</span>
              </div>
              {loadingProgress > 10 && <div>{">"} MOUNTING_FILE_SYSTEM... OK</div>}
              {loadingProgress > 30 && <div>{">"} INITIALIZING_CIPHER_CORE... OK</div>}
@@ -765,68 +787,120 @@ export default function App() {
     );
   }
 
-  if (gameState && gameState.day > 30) {
+  if (gameState && gameState.day >= 30) {
     return (
-      <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-        <BgCanvas />
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 max-w-2xl z-10">
-          <div className="text-8xl font-black text-gold">Ω</div>
-          <h2 className="text-4xl font-black tracking-tighter uppercase">Protocol Complete</h2>
-          <p className="text-gray-400 italic">"The noise is gone. You are now a Sovereign Architect. Go forth and build."</p>
-          <div className="grid grid-cols-4 gap-4">
-             {[
-               { l: 'Capital', v: gameState.capital, c: 'text-gold' },
-               { l: 'Focus', v: gameState.focus, c: 'text-blue-400' },
-               { l: 'Vitality', v: gameState.vitality, c: 'text-red-400' },
-               { l: 'Sovereignty', v: gameState.sovereignty, c: 'text-green-400' }
-             ].map(s => (
-               <div key={s.l} className="glass-panel p-4 rounded-xl">
-                 <div className={`text-2xl font-mono ${s.c}`}>{s.v}</div>
-                 <div className="text-[8px] uppercase tracking-widest text-muted">{s.l}</div>
-               </div>
-             ))}
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 text-center relative overflow-hidden font-mono">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 2 }} className="max-w-3xl w-full z-10 flex flex-col items-center">
+          
+          {/* Certificate Container */}
+          <div id="certificate-node" className="relative p-16 md:p-24 border border-white/20 bg-black w-full overflow-hidden shadow-2xl">
+            {/* Minimalist Accents */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-white/40" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-white/40" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-white/40" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-white/40" />
+            
+            <div className="space-y-16">
+              <div className="flex flex-col items-center gap-4">
+                 <div className="w-16 h-px bg-white/40" />
+                 <div className="tracking-[0.5em] text-white/50 text-[10px] uppercase">Quiet Wealth Protocol</div>
+                 <div className="w-16 h-px bg-white/40" />
+              </div>
+
+              <div className="space-y-4">
+                 <div className="text-[10px] tracking-[0.4em] text-white/40 uppercase">Certificate of Access</div>
+                 <h2 className="text-4xl md:text-5xl font-black text-white tracking-widest uppercase">{gameState.name}</h2>
+                 <div className="text-[12px] tracking-[0.6em] text-[#d4af37] uppercase mt-2">Status: MASTER</div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-8 border-t border-white/10">
+                 {[
+                   { l: 'Capital', v: 'MASTER' },
+                   { l: 'Focus', v: 'MAXIMUM' },
+                   { l: 'Vitality', v: 'MAXIMUM' },
+                   { l: 'Sovereignty', v: 'ABSOLUTE' }
+                 ].map(s => (
+                   <div key={s.l} className="flex flex-col items-center">
+                     <div className="text-xl text-white block mb-1 font-bold tracking-widest">{s.v}</div>
+                     <div className="text-[8px] uppercase tracking-widest text-white/40">{s.l}</div>
+                   </div>
+                 ))}
+              </div>
+
+              <div className="flex justify-between items-end pt-12">
+                 <div className="text-left space-y-1">
+                    <div className="text-[8px] text-white/30 uppercase tracking-widest">ID_HASH</div>
+                    <div className="text-[10px] text-white/50 font-mono">0x{Math.random().toString(16).slice(2, 10).toUpperCase()}_{gameState.day}</div>
+                 </div>
+                 <div className="text-right space-y-1">
+                    <div className="text-[8px] text-white/30 uppercase tracking-widest">Auth_Date</div>
+                    <div className="text-[10px] text-white/50 font-mono">
+                      {new Date().getFullYear()}-{String(new Date().getMonth() + 1).padStart(2, '0')}-{String(new Date().getDate()).padStart(2, '0')}
+                    </div>
+                 </div>
+              </div>
+            </div>
           </div>
-          <button onClick={resetProtocol} className="px-8 py-4 border border-gold/40 text-gold text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-black transition-all rounded-lg">
-            Restart Cycle
-          </button>
+
+          <div className="mt-12 flex items-center gap-6">
+            <button 
+              onClick={handleDownloadCertificate} 
+              className="text-[10px] uppercase tracking-widest text-[#d4af37]/80 hover:text-[#d4af37] transition-colors border-b border-[#d4af37]/20 hover:border-[#d4af37] pb-1"
+            >
+              Preserve Record 🖼️
+            </button>
+            <button 
+              onClick={requestReset} 
+              className="text-[10px] uppercase tracking-widest text-white/30 hover:text-red-400 transition-colors border-b border-transparent hover:border-red-400 pb-1"
+            >
+              Initialize New Cycle
+            </button>
+          </div>
         </motion.div>
+        {isConfirmingReset && <ConfirmResetModal />}
       </div>
     );
   }
 
   const getClearanceLevel = () => {
     const day = gameState?.day || 1;
-    if (day >= 25) return { color: 'text-red-500', name: 'Sovereign Architect', bg: 'bg-red-500/20' };
-    if (day >= 15) return { color: 'text-purple-500', name: 'Ghost Node', bg: 'bg-purple-500/20' };
-    if (day >= 7) return { color: 'text-blue-400', name: 'Network Unit', bg: 'bg-blue-400/20' };
-    return { color: 'text-gold', name: 'Prospect', bg: 'bg-gold/20' };
+    if (day >= 25) return { color: 'text-white', name: 'Sovereign Architect', bg: 'bg-white/10' };
+    if (day >= 15) return { color: 'text-white/80', name: 'Ghost Node', bg: 'bg-white/5' };
+    if (day >= 7) return { color: 'text-white/60', name: 'Network Unit', bg: 'bg-white/5' };
+    return { color: 'text-[#d4af37]', name: 'Prospect', bg: 'bg-[#d4af37]/10' };
   };
 
   const clearance = getClearanceLevel();
 
+  const milestoneClass = gameState?.day === 10 ? 'bg-milestone-1' : 
+                         gameState?.day === 20 ? 'bg-milestone-2' : 
+                         gameState?.day === 30 ? 'bg-milestone-3' : 'bg-[#020202]';
+
   return (
-    <div className="min-h-screen bg-bg flex flex-col font-sans relative overflow-hidden">
-      <NeuralLink currentDay={gameState?.day || 1} />
-      {flashActive && <div className="fixed inset-0 z-[200] bg-white animate-whiteout" />}
+    <div className={`min-h-screen flex flex-col font-sans relative overflow-hidden ${milestoneClass}`}>
       
       {/* Visual Effects Layer */}
-      <div className="crt-overlay" />
-      <div className="scanline" />
-      <div className="vignette" />
+      {vfxEnabled && (
+        <>
+          <div className="crt-overlay" />
+          <div className="scanline" />
+          <div className="vignette" />
+        </>
+      )}
       
       <BgCanvas />
       
       <header className="glass-panel sticky top-0 z-50 p-4 flex justify-between items-center px-6 bg-black/40 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-6">
           <div 
-            className="glitch-wrap px-3 py-1.5 bg-gold/10 border border-gold/30 rounded-lg group hover:border-gold transition-colors cursor-pointer" 
+            className="glitch-wrap px-3 py-1.5 bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-none group hover:border-[#d4af37] transition-colors cursor-pointer" 
             onClick={() => setScreen('intro')}
           >
-            <span className="text-[10px] font-black tracking-[0.2em] text-gold-gradient" data-text="QW_PROT">QW_PROT</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-[#d4af37]-gradient" data-text="QW_PROT">QW_PROT</span>
           </div>
           <div className="h-6 w-px bg-white/10" />
           <div className="flex gap-4 items-center">
-            <div className="text-2xl bg-gold/10 w-10 h-10 flex items-center justify-center rounded-xl border border-gold/20">
+            <div className="text-2xl bg-[#d4af37]/10 w-10 h-10 flex items-center justify-center rounded-none border border-[#d4af37]/20">
               {AVATARS.find(a => a.id === gameState?.avatar)?.icon || '👤'}
             </div>
             <div className="flex flex-col">
@@ -839,11 +913,11 @@ export default function App() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
              <div className={`px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${clearance.bg} ${clearance.color} border border-current opacity-80`}>
-                Lvl_{gameState?.day || 1} // {clearance.name}
+                System Access Level: {clearance.name}
              </div>
              <div className="h-4 w-px bg-white/10" />
              <div className="flex flex-col items-end">
-               <div className="text-gold font-mono font-bold text-[10px]">{gameState?.streak}D STREAK</div>
+               <div className="text-[#d4af37] font-mono font-bold text-[10px]">{gameState?.streak}D STREAK</div>
                <div className="text-[7px] text-muted tracking-widest font-bold uppercase flex items-center gap-1">
                  <Zap size={8} className="text-green-400" /> Neural_Link: Active
                </div>
@@ -851,68 +925,65 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-             <button onClick={() => setAudioEnabled(sounds.toggleAudio())} className="p-2 rounded-lg bg-white/5 text-muted hover:text-white transition-colors border border-white/5">
-               {audioEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+             <button onClick={() => setShowSettings(true)} className="p-2 rounded-none bg-white/5 text-muted hover:text-white transition-colors border border-white/5">
+                <Terminal size={14} />
              </button>
-             <button onClick={() => setShowSettings(true)} className="p-2 rounded-lg bg-white/5 text-muted hover:text-gold transition-colors border border-white/5">
-               <Settings size={14} />
+             <button onClick={() => setAudioEnabled(sounds.toggleAudio())} className="p-2 rounded-none bg-white/5 text-muted hover:text-white transition-colors border border-white/5">
+               {audioEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
              </button>
           </div>
         </div>
       </header>
 
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-[190] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="max-w-sm w-full glass-panel p-6 rounded-3xl space-y-6">
-                <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                   <h3 className="text-xs font-bold text-gold uppercase tracking-widest flex items-center gap-2">
-                     <Settings size={14} /> System Configuration
-                   </h3>
-                   <button onClick={() => setShowSettings(false)} className="text-muted hover:text-white"><X size={16}/></button>
-                </div>
-                
-                <div className="space-y-4">
-                   <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
-                      <span className="text-[10px] text-white/70 uppercase font-bold tracking-widest">Audio Feedback</span>
-                      <button onClick={() => setAudioEnabled(sounds.toggleAudio())} className={`w-10 h-5 rounded-full transition-all relative ${audioEnabled ? 'bg-gold' : 'bg-white/10'}`}>
-                         <div className={`absolute top-1 w-3 h-3 rounded-full bg-black transition-all ${audioEnabled ? 'right-1' : 'left-1'}`} />
-                      </button>
-                   </div>
-                   
-                   <button 
-                     onClick={resetProtocol}
-                     className="w-full p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest"
-                   >
-                     <RefreshCcw size={14} /> Full Protocol Reset
-                   </button>
-                   
-                   <p className="text-[7px] text-muted text-center uppercase tracking-widest">
-                     Quiet Wealth Operating System // Unit {gameState?.name} // Session Hash: 7X-09
-                   </p>
-                </div>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <main className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col md:grid md:grid-cols-[1fr_300px] gap-8 relative z-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col lg:grid lg:grid-cols-[1fr_260px] gap-8 relative z-10">
         <div className="space-y-8">
           {/* Navigation Tabs */}
-          <div className="flex gap-1 bg-black/40 p-1 rounded-2xl border border-white/5 w-fit">
+          <div className="flex gap-1 bg-black/40 p-1 rounded-none border border-white/5 w-fit">
+            <button 
+              onClick={() => setViewMode('roadmap')}
+              className={`px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'roadmap' ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-muted hover:text-white'}`}
+            >
+              System Roadmap
+            </button>
             <button 
               onClick={() => setViewMode('mission')}
-              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'mission' ? 'bg-gold text-black shadow-lg shadow-gold/20' : 'text-muted hover:text-white'}`}
+              className={`px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'mission' ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-muted hover:text-white'}`}
             >
               Protocol Mission
             </button>
             <button 
-              onClick={() => setViewMode('roadmap')}
-              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'roadmap' ? 'bg-gold text-black shadow-lg shadow-gold/20' : 'text-muted hover:text-white'}`}
+              onClick={() => setViewMode('dashboard')}
+              className={`px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'dashboard' ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-muted hover:text-white'}`}
             >
-              System Roadmap
+              Analytics
             </button>
+            <button 
+              onClick={() => setViewMode('vault')}
+              className={`px-6 py-2 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'vault' ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-muted hover:text-white'}`}
+            >
+              System Vault
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Capital', val: gameState?.capital, icon: <TrendingUp size={12}/>, color: 'text-[#d4af37]' },
+              { label: 'Focus', val: gameState?.focus, icon: <Brain size={12}/>, color: 'text-blue-400' },
+              { label: 'Vitality', val: gameState?.vitality, icon: <Activity size={12}/>, color: 'text-red-400' },
+              { label: 'Sovereignty', val: gameState?.sovereignty, icon: <Shield size={12}/>, color: 'text-green-400' }
+            ].map(stat => (
+              <div key={stat.label} className="glass-panel p-3 rounded-none hover:border-white/20 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[8px] font-bold text-muted uppercase tracking-widest flex items-center gap-1">
+                    {stat.icon} {stat.label}
+                  </span>
+                  <span className={`text-xs font-mono font-bold ${stat.color}`}>{stat.val}</span>
+                </div>
+                <div className="h-0.5 bg-white/5 rounded-none overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${stat.val}%` }} className={`h-full ${stat.color.replace('text', 'bg')}`} />
+                </div>
+              </div>
+            ))}
           </div>
 
           {viewMode === 'roadmap' ? (
@@ -931,89 +1002,48 @@ export default function App() {
                 }} 
               />
             </motion.div>
+          ) : viewMode === 'dashboard' && gameState ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <StatsDashboard gameState={gameState} />
+            </motion.div>
+          ) : viewMode === 'vault' && gameState ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <DataVault gameState={gameState} />
+            </motion.div>
           ) : (
             <div className="space-y-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: 'Capital', val: gameState?.capital, icon: <TrendingUp size={12}/>, color: 'text-gold' },
-              { label: 'Focus', val: gameState?.focus, icon: <Brain size={12}/>, color: 'text-blue-400' },
-              { label: 'Vitality', val: gameState?.vitality, icon: <Activity size={12}/>, color: 'text-red-400' },
-              { label: 'Sovereignty', val: gameState?.sovereignty, icon: <Shield size={12}/>, color: 'text-green-400' }
-            ].map(stat => (
-              <div key={stat.label} className="glass-panel p-3 rounded-xl hover:border-white/20 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[8px] font-bold text-muted uppercase tracking-widest flex items-center gap-1">
-                    {stat.icon} {stat.label}
-                  </span>
-                  <span className={`text-xs font-mono font-bold ${stat.color}`}>{stat.val}</span>
-                </div>
-                <div className="h-0.5 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${stat.val}%` }} className={`h-full ${stat.color.replace('text', 'bg')}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 overflow-hidden">
-                <span className="text-6xl font-black text-gold/30 flex-shrink-0">{String(gameState?.day).padStart(2, '0')}</span>
+                <span className="text-6xl font-black text-[#d4af37]/30 flex-shrink-0">{String(gameState?.day).padStart(2, '0')}</span>
                 <div className="min-w-0">
-                  <div className="text-gold text-[8px] font-bold tracking-[0.2em] uppercase truncate">Quiet Money Protocol</div>
+                  <div className="text-[#d4af37] text-[8px] font-bold tracking-[0.2em] uppercase truncate">Quiet Money Protocol</div>
                   <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight truncate uppercase">{currentDay?.title}</h2>
                 </div>
               </div>
               <div className="flex gap-2">
-                 <button onClick={() => setShowMap(true)} className="p-3 text-white/30 hover:text-white hover:bg-white/5 rounded-full transition-all">
+                 <button onClick={() => setViewMode('roadmap')} className="p-3 text-white/30 hover:text-white hover:bg-white/5 rounded-none transition-all">
                     <MapIcon size={20} />
-                 </button>
-                 <button onClick={askMentor} className="p-3 text-gold/50 hover:text-gold hover:bg-gold/10 rounded-full transition-all">
-                    <MessageSquare size={20} />
                  </button>
               </div>
             </div>
 
-            {showMap ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                <button onClick={() => setShowMap(false)} className="text-[10px] text-gold uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-transform font-bold">
-                  <ChevronRight className="rotate-180" size={12} /> Back to Entry Point
-                </button>
-                <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-                  {PROTOCOL_DAYS.map(d => (
-                    <button 
-                      key={d.day}
-                      disabled={!gameState?.unlocked?.includes(d.day)}
-                      onClick={() => { setGameState(prev => prev ? { ...prev, day: d.day, stepsCompleted: [] } : null); setShowMap(false); }}
-                      className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-1 border transition-all ${
-                        gameState?.day === d.day ? 'bg-gold/20 border-gold shadow-[0_0_10px_rgba(212,175,55,0.3)]' :
-                        gameState?.unlocked?.includes(d.day) ? 'bg-white/5 border-white/10 hover:border-white/20' : 'opacity-20 border-transparent grayscale'
-                      }`}
-                    >
-                      <span className="text-[10px] font-mono font-bold leading-none">{d.day}</span>
-                      {d.day < (gameState?.day || 1) ? <Check size={8} className="text-green-400" /> : 
-                       gameState?.day === d.day ? <Activity size={8} className="text-gold animate-pulse" /> : 
-                       <Lock size={8} className="text-muted" />}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            ) : (
-              <AnimatePresence mode="wait">
-                <motion.div key={gameState?.day} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                  <div className="glass-panel p-5 rounded-xl border-l-[3px] border-l-gold shadow-lg shadow-black/50">
-                    <div className="text-[8px] font-bold text-gold uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
-                       <Target size={10} className="text-gold animate-pulse" /> Mission Brief: Day {gameState?.day}
+            <AnimatePresence mode="wait">
+              <motion.div key={gameState?.day} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <div className="glass-panel p-5 rounded-none border-l-[3px] border-l-[#d4af37] shadow-lg shadow-black/50">
+                    <div className="text-[8px] font-bold text-[#d4af37] uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
+                       <Target size={10} className="text-[#d4af37] animate-pulse" /> Mission Brief: Day {gameState?.day}
                     </div>
                     <p className="text-sm text-gray-300 leading-relaxed font-medium">
                       {localizeText(currentDay?.mission || "")}
                     </p>
                     {gameState?.day === 1 && (
-                      <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-none">
                         <p className="text-[10px] text-blue-300 uppercase leading-relaxed font-bold">
                           Step 1: Open the Audit Tool below. <br/>
                           Step 2: Enter exactly 5 entries (Rent, Food, etc). <br/>
                           Step 3: Mark steps as completed in the Sidebar. <br/>
-                          <span className="text-gold italic mt-1 block">Status: {(() => {
+                          <span className="text-[#d4af37] italic mt-1 block">Status: {(() => {
                             const auditData = localStorage.getItem(`qw_audit_${gameState.name}`);
                             const count = auditData ? JSON.parse(auditData).length : 0;
                             return `${count}/5 Entries Recorded`;
@@ -1034,7 +1064,7 @@ export default function App() {
                     >
                       {gameState?.day === 1 && (
                         <div className="space-y-4">
-                          <div className="text-[10px] font-bold text-gold uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
+                          <div className="text-[10px] font-bold text-[#d4af37] uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
                             <TableIcon size={12} /> Unit Audit Terminal
                           </div>
                           <AuditTool name={gameState.name} />
@@ -1061,6 +1091,15 @@ export default function App() {
 
                       {gameState?.day === 5 && <IpLeakTest />}
 
+                      {gameState?.day === 11 && (
+                        <div className="space-y-4">
+                           <div className="text-[10px] font-bold text-[#d4af37] uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
+                             <Shield size={12} /> Threat Model Matrix
+                           </div>
+                           <OpSecMatrix name={gameState.name} />
+                        </div>
+                      )}
+
                       {gameState?.day === 16 && (
                         <div className="space-y-4">
                            <div className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
@@ -1072,7 +1111,7 @@ export default function App() {
 
                       {gameState?.day === 10 && (
                         <div className="space-y-4">
-                           <div className="text-[10px] font-bold text-gold uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
+                           <div className="text-[10px] font-bold text-[#d4af37] uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
                              <Trophy size={12} /> Milestone: Stage 01 Clear
                            </div>
                            <ShareAchievement day={10} name={gameState.name} />
@@ -1089,9 +1128,9 @@ export default function App() {
                       )}
 
                       {/* Default Tool for all other days – ensures 100% "worked" instrument requirement */}
-                      {![1, 2, 3, 5, 16, 22].includes(gameState?.day || 0) && (
+                      {![1, 2, 3, 5, 11, 16, 22].includes(gameState?.day || 0) && (
                         <div className="space-y-4">
-                           <div className="text-[10px] font-bold text-gold/60 uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
+                           <div className="text-[10px] font-bold text-[#d4af37]/60 uppercase tracking-[0.4em] mb-2 flex items-center gap-2">
                              <PenTool size={12} /> System Adherence Module
                            </div>
                            <SovereignJournal 
@@ -1104,10 +1143,10 @@ export default function App() {
                     </motion.div>
                   </AnimatePresence>
 
-                  <div className="glass-panel p-5 rounded-xl border-l-[3px] border-l-blue-400/50">
+                  <div className="glass-panel p-5 rounded-none border-l-[3px] border-l-blue-400/50">
                     <div className="text-[8px] font-bold text-blue-400 uppercase tracking-[0.3em] mb-2">Architectural Theory</div>
                     <p className="text-xs text-gray-400 mb-4">{localizeText(currentDay?.theory || "")}</p>
-                    <div className="bg-blue-400/5 p-3 rounded-lg border border-blue-400/10 text-xs text-blue-300 font-medium italic">
+                    <div className="bg-blue-400/5 p-3 rounded-none border border-blue-400/10 text-xs text-blue-300 font-medium italic">
                       "{currentDay?.tip}"
                     </div>
                   </div>
@@ -1117,8 +1156,8 @@ export default function App() {
                       <button
                         key={step.name} 
                         onClick={() => setActiveStepIdx(i)}
-                        className={`w-full flex items-start gap-4 p-4 rounded-xl border transition-all text-left group/step ${
-                          gameState?.stepsCompleted.includes(i) ? 'bg-green-400/5 border-green-400/30 opacity-70' : 'bg-white/2 border-white/5 hover:border-gold/30'
+                        className={`w-full flex items-start gap-4 p-4 rounded-none border transition-all text-left group/step ${
+                          gameState?.stepsCompleted.includes(i) ? 'bg-green-400/5 border-green-400/30 opacity-70' : 'bg-white/2 border-white/5 hover:border-[#d4af37]/30'
                         }`}
                       >
                         <div className={`mt-1 font-mono font-bold text-xs ${gameState?.stepsCompleted.includes(i) ? 'text-green-400' : 'text-muted'}`}>
@@ -1127,11 +1166,11 @@ export default function App() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                              <h4 className={`text-xs font-bold uppercase tracking-widest ${gameState?.stepsCompleted.includes(i) ? 'text-white' : 'text-white/60'}`}>{step.name}</h4>
-                             {!gameState?.stepsCompleted.includes(i) && <span className="text-[7px] bg-gold/10 text-gold px-1 rounded opacity-0 group-hover/step:opacity-100 transition-opacity">STUDY</span>}
+                             {!gameState?.stepsCompleted.includes(i) && <span className="text-[7px] bg-[#d4af37]/10 text-[#d4af37] px-1 rounded opacity-0 group-hover/step:opacity-100 transition-opacity">STUDY</span>}
                           </div>
                           <p className="text-[10px] text-muted mt-1">{localizeText(step.desc)}</p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                        <div className={`w-5 h-5 rounded-none border flex items-center justify-center transition-all ${
                           gameState?.stepsCompleted.includes(i) ? 'border-green-400 bg-green-400 text-black' : 'border-white/20'
                         }`}> {gameState?.stepsCompleted.includes(i) && <Check size={12} />} </div>
                       </button>
@@ -1153,33 +1192,32 @@ export default function App() {
                     })()}
                     onClick={completeDay}
                     whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                    className="w-full h-16 glass-panel border border-gold text-gold-light text-xs font-bold tracking-[0.4em] uppercase rounded-xl hover:bg-gold hover:text-black transition-all shadow-xl shadow-gold/20 disabled:opacity-10 group relative overflow-hidden"
+                    className="w-full h-16 glass-panel border border-[#d4af37] text-[#d4af37]-light text-xs font-bold tracking-[0.4em] uppercase rounded-none hover:bg-[#d4af37] hover:text-black transition-all shadow-xl shadow-[#d4af37]/20 disabled:opacity-10 group relative overflow-hidden"
                   >
                     <span className="relative z-10 group-hover:scale-105 transition-transform inline-block">Execute Command & Pulse</span>
                   </motion.button>
                 </motion.div>
               </AnimatePresence>
-            )}
           </div>
         </div>
       )}
     </div>
 
-    <aside className="hidden lg:flex flex-col gap-6 h-full">
-          <div className="glass-panel p-5 rounded-2xl flex-1 flex flex-col shadow-lg">
-            <div className="text-[8px] font-bold text-muted uppercase tracking-[0.4em] mb-6 border-b border-white/5 pb-2 flex items-center justify-between">
+    <aside className="hidden lg:flex flex-col gap-6">
+          <div className="glass-panel p-5 rounded-none flex flex-col shadow-lg">
+            <div className="text-[8px] font-bold text-muted uppercase tracking-[0.4em] mb-4 border-b border-white/5 pb-2 flex items-center justify-between">
               Instruction Cycle <Cpu size={10} className="animate-spin-slow" />
             </div>
-            <div className="space-y-4 overflow-y-auto max-h-[400px] scrollbar-hide">
+            <div className="space-y-4 overflow-y-auto max-h-[250px] scrollbar-hide">
               {currentDay?.timeline.map((t, i) => (
                 <div key={i} className="flex gap-4 group">
-                  <div className="text-[10px] font-mono font-bold text-gold opacity-50 group-hover:opacity-100 transition-opacity whitespace-nowrap">{t.time}</div>
+                  <div className="text-[10px] font-mono font-bold text-[#d4af37] opacity-50 group-hover:opacity-100 transition-opacity whitespace-nowrap">{t.time}</div>
                   <div className="flex-1 text-[10px] text-muted leading-tight group-hover:text-white transition-colors">{t.action}</div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="glass-panel p-5 rounded-2xl shadow-lg shadow-gold/5">
+          <div className="glass-panel p-5 rounded-none shadow-lg shadow-[#d4af37]/5">
              <div className="text-[8px] font-bold text-muted uppercase tracking-[0.4em] mb-4 flex items-center justify-between">
                 Live Signal <Globe size={10} className="text-blue-400 animate-pulse" />
              </div>
@@ -1188,52 +1226,90 @@ export default function App() {
         </aside>
       </main>
 
-      <footer className="glass-panel p-2 text-center text-[7px] text-muted uppercase tracking-[0.4em] z-10 bg-black/50">
+      <footer 
+        className="glass-panel p-2 text-center text-[7px] text-muted uppercase tracking-[0.4em] z-10 bg-black/50 cursor-pointer hover:text-white/30 transition-colors"
+        onClick={handleDevClick}
+      >
          Quiet Wealth Protocol // Identification Hash: {gameState?.name || 'GHOST'} // Port 3000 Active
+         {isDevMode && <span className="text-[#d4af37] ml-2 font-bold">[DEV MODE]</span>}
       </footer>
+
+      <AnimatePresence>
+        {showDevAuth && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full glass-panel p-8 rounded-none space-y-6 flex flex-col items-center">
+              <Terminal size={32} className="text-[#d4af37] mb-2" />
+              <h2 className="text-xl font-bold text-white uppercase tracking-widest text-center">Protocol Override</h2>
+              <p className="text-xs text-gray-400 text-center uppercase tracking-widest">Awaiting authentication sequence</p>
+              
+              <form onSubmit={handleDevAuthSubmit} className="w-full flex-col flex items-center space-y-4 w-64">
+                <input 
+                  autoFocus
+                  type="password"
+                  value={devPassword}
+                  onChange={(e) => setDevPassword(e.target.value)}
+                  className="bg-black/50 border border-white/20 text-center w-full px-4 py-3 rounded-none text-white text-sm font-mono tracking-[0.2em] focus:border-[#d4af37] outline-none transition-colors"
+                  placeholder="********"
+                />
+                <div className="flex gap-4 w-full">
+                  <button type="button" onClick={() => setShowDevAuth(false)} className="px-4 py-2 border border-white/10 rounded-none text-xs text-muted hover:bg-white/5 uppercase w-full">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#d4af37] text-black font-bold uppercase rounded-none text-xs tracking-widest hover:scale-105 transition-transform w-full">Verify</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Verification Gate Modal */}
       <AnimatePresence>
         {showVerification && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl w-full glass-panel p-8 rounded-3xl space-y-6 text-center border-gold/40">
-              <div className="text-gold flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest border-b border-white/5 pb-4">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl w-full glass-panel p-8 rounded-none space-y-6 text-center border-[#d4af37]/40">
+              <div className="text-[#d4af37] flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest border-b border-white/5 pb-4">
                 <Shield size={16} /> {currentDay?.verificationGate?.title}
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">{currentDay?.verificationGate?.desc}</p>
-              <div className="bg-white/2 border border-white/5 p-4 rounded-2xl space-y-2 text-left">
+              <div className="bg-white/2 border border-white/5 p-4 rounded-none space-y-2 text-left">
                 {currentDay?.verificationGate?.checks.map((c, i) => (
                   <div key={i} className="text-[10px] text-muted flex items-center gap-2 uppercase tracking-widest">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {c}
+                    <div className="w-1.5 h-1.5 rounded-none bg-[#d4af37]/50" /> {c}
                   </div>
                 ))}
               </div>
-              <a 
-                onClick={() => {
-                  setHasClickedLink(true);
-                  localStorage.setItem('day5_link_clicked', 'true');
-                }}
-                href={currentDay?.verificationGate?.cta.link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-full py-4 bg-green-400/10 border border-green-400/30 text-green-400 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:bg-green-400/20 transition-all font-black"
-              >
-                {currentDay?.verificationGate?.cta.text} <ExternalLink size={14}/>
-              </a>
+              
+              {currentDay?.verificationGate?.cta && (
+                <a 
+                  onClick={() => {
+                    setHasClickedLink(true);
+                    if (gameState) {
+                      localStorage.setItem(`qw_link_clicked_${gameState.day}`, 'true');
+                    }
+                  }}
+                  href={currentDay?.verificationGate?.cta.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-none flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest hover:bg-purple-500/20 transition-all font-black"
+                >
+                  {currentDay?.verificationGate?.cta.text} <Terminal size={14}/>
+                </a>
+              )}
+
               <button 
                 onClick={handleVerification}
-                disabled={currentDay?.day === 5 && !hasClickedLink}
-                className={`w-full py-4 bg-gold text-black font-black rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-xl shadow-gold/20 ${
-                  currentDay?.day === 5 && !hasClickedLink 
+                disabled={currentDay?.verificationGate?.cta ? (!hasClickedLink && !isDevMode) : false}
+                className={`w-full py-4 bg-[#d4af37] text-black font-black rounded-none text-[10px] font-bold uppercase tracking-widest transition-all shadow-xl shadow-[#d4af37]/20 ${
+                  (currentDay?.verificationGate?.cta && !hasClickedLink && !isDevMode)
                   ? 'opacity-30 cursor-not-allowed grayscale' 
                   : 'hover:scale-105 active:scale-95'
                 }`}
               >
                 {currentDay?.verificationGate?.confirmText}
               </button>
-              {currentDay?.day === 5 && !hasClickedLink && (
+              
+              {!hasClickedLink && !isDevMode && (
                 <p className="text-[9px] text-red animate-pulse uppercase tracking-widest">
-                  Authentication Link Required / (RU: Нужно нажать на ссылку для подтверждения)
+                  Tool execution required to proceed
                 </p>
               )}
             </motion.div>
@@ -1242,39 +1318,23 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAssistant && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="max-w-md w-full glass-panel p-8 rounded-3xl relative border-gold/20 shadow-2xl shadow-gold/10">
-              <button onClick={() => setShowAssistant(false)} className="absolute top-4 right-4 text-muted hover:text-white transition-colors">✕</button>
-              <div className="text-gold flex items-center gap-2 text-sm font-bold uppercase tracking-widest mb-4"><Shield size={16} /> Architect's Mentor</div>
-              <div className="min-h-[100px] flex flex-col justify-center">
-                {isAssistantLoading ? <div className="flex gap-2"><span className="w-2 h-2 bg-gold/50 rounded-full animate-bounce" /><span className="w-2 h-2 bg-gold/50 rounded-full animate-bounce [animation-delay:-0.15s]" /><span className="w-2 h-2 bg-gold/50 rounded-full animate-bounce [animation-delay:-0.3s]" /></div> :
-                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line font-medium">{assistantMsg || localizeText(currentDay?.assistantHint || "")}</p>}
-              </div>
-              <button onClick={() => setShowAssistant(false)} className="mt-8 w-full py-3 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all text-muted hover:text-white">Dismiss Frequency</button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {screen === 'reward' && (
-          <div className="fixed inset-0 z-[200] bg-bg flex flex-col items-center justify-center p-8 text-center bg-radial-[circle_at_50%_0%,rgba(212,175,55,0.08),transparent_60%]">
+          <div className="fixed inset-0 z-[200] bg-[#020202] flex flex-col items-center justify-center p-8 text-center bg-radial-[circle_at_50%_0%,rgba(212,175,55,0.08),transparent_60%]">
             <BgCanvas />
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-8 w-full max-w-2xl z-10">
-              <div className="text-[120px] font-black text-gold/20 leading-none select-none drop-shadow-[0_0_30px_rgba(212,175,55,0.1)]">{String(gameState?.day).padStart(2, '0')}</div>
+              <div className="text-[120px] font-black text-[#d4af37]/20 leading-none select-none drop-shadow-[0_0_30px_rgba(212,175,55,0.1)]">{String(gameState?.day).padStart(2, '0')}</div>
               <div className="space-y-2">
                 <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{currentDay?.title}</h2>
-                <p className="text-gold font-bold tracking-[0.3em] uppercase text-xs">Signal Stabilized / Evolution Active</p>
+                <p className="text-[#d4af37] font-bold tracking-[0.3em] uppercase text-xs">Signal Stabilized / Evolution Active</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { l: 'Capital', v: currentDay?.rewards.capital, c: 'text-gold' },
+                  { l: 'Capital', v: currentDay?.rewards.capital, c: 'text-[#d4af37]' },
                   { l: 'Focus', v: currentDay?.rewards.focus, c: 'text-blue-400' },
                   { l: 'Vitality', v: currentDay?.rewards.vitality, c: 'text-red-400' },
                   { l: 'Sovereignty', v: currentDay?.rewards.sovereignty, c: 'text-green-400' }
                 ].map(r => (
-                  <div key={r.l} className="glass-panel p-6 rounded-2xl hover:scale-105 transition-transform">
+                  <div key={r.l} className="glass-panel p-6 rounded-none hover:scale-105 transition-transform">
                      <div className={`text-4xl font-mono font-bold ${r.c}`}>+{r.v}</div>
                      <div className="text-[8px] font-bold text-muted uppercase tracking-widest mt-2">{r.l}</div>
                   </div>
@@ -1286,12 +1346,12 @@ export default function App() {
                    type="text" 
                    autoFocus
                    placeholder="TYPE COMMAND..."
-                   className="bg-transparent border-b border-gold/40 text-center font-mono text-2xl text-white outline-none w-64 uppercase tracking-[0.2em] focus:border-gold transition-all"
+                   className="bg-transparent border-b border-[#d4af37]/40 text-center font-mono text-2xl text-white outline-none w-64 uppercase tracking-[0.2em] focus:border-[#d4af37] transition-all"
                    onChange={(e) => { 
                      if(e.target.value.trim().toUpperCase() === currentDay?.command) handleRewardConfirm(); 
                    }}
                  />
-                 <div className="text-[7px] text-muted italic">Signal Required: "{currentDay?.command}" (RU: Введите "{currentDay?.command}")</div>
+                 <div className="text-[7px] text-muted italic">Signal Required: "{currentDay?.command}"</div>
               </div>
             </motion.div>
           </div>
@@ -1301,14 +1361,14 @@ export default function App() {
       <AnimatePresence>
         {activeStepIdx !== null && (
           <div className="fixed inset-0 z-[180] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-2xl w-full glass-panel overflow-hidden rounded-3xl flex flex-col max-h-[85vh]">
-                <div className="bg-gold/10 p-6 flex justify-between items-center border-b border-gold/20">
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-2xl w-full glass-panel overflow-hidden rounded-none flex flex-col max-h-[85vh]">
+                <div className="bg-[#d4af37]/10 p-6 flex justify-between items-center border-b border-[#d4af37]/20">
                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-black/40 border border-gold/30 flex items-center justify-center text-gold font-mono font-bold">
+                      <div className="w-10 h-10 rounded-none bg-black/40 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] font-mono font-bold">
                         {String(activeStepIdx + 1).padStart(2, '0')}
                       </div>
                       <div>
-                        <div className="text-[8px] font-bold text-gold uppercase tracking-[0.4em]">Sub-Protocol Instruction</div>
+                        <div className="text-[8px] font-bold text-[#d4af37] uppercase tracking-[0.4em]">Sub-Protocol Instruction</div>
                         <h3 className="text-lg font-bold text-white uppercase tracking-tight">{currentDay?.steps[activeStepIdx]?.name}</h3>
                       </div>
                    </div>
@@ -1317,16 +1377,16 @@ export default function App() {
                 
                 <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-gold uppercase tracking-widest opacity-80">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#d4af37] uppercase tracking-widest opacity-80">
                          <Cpu size={12} /> Architectural Theory
                       </div>
-                      <div className="text-gray-300 leading-relaxed font-mono text-sm whitespace-pre-line border-l-2 border-gold/20 pl-6">
+                      <div className="text-gray-300 leading-relaxed font-mono text-sm whitespace-pre-line border-l-2 border-[#d4af37]/20 pl-6">
                          {localizeText(currentDay?.steps[activeStepIdx]?.studyContent || "")}
                       </div>
                    </div>
 
                    {currentDay?.steps[activeStepIdx]?.task && (
-                     <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-4">
+                     <div className="p-6 bg-white/5 rounded-none border border-white/10 space-y-4">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
                            <Zap size={12} /> Direct Tasking
                         </div>
@@ -1336,7 +1396,7 @@ export default function App() {
                      </div>
                    )}
 
-                   <div className="p-4 rounded-xl border border-gold/10 bg-gold/5 text-[10px] text-gold/60 italic flex gap-3">
+                   <div className="p-4 rounded-none border border-[#d4af37]/10 bg-[#d4af37]/5 text-[10px] text-[#d4af37]/60 italic flex gap-3">
                       <Info size={14} className="shrink-0" />
                       Physical execution is mandatory for signal stability. Marking this step as complete without action will desync your sovereignty metrics.
                    </div>
@@ -1345,7 +1405,7 @@ export default function App() {
                 <div className="p-6 bg-black/40 border-t border-white/5 flex gap-4">
                    <button 
                      onClick={() => setActiveStepIdx(null)}
-                     className="px-6 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-muted hover:text-white hover:bg-white/5 transition-all"
+                     className="px-6 py-4 rounded-none text-[10px] font-bold uppercase tracking-widest text-muted hover:text-white hover:bg-white/5 transition-all"
                    >
                      Dismiss
                    </button>
@@ -1354,10 +1414,10 @@ export default function App() {
                         toggleStep(activeStepIdx);
                         setActiveStepIdx(null);
                      }}
-                     className={`flex-1 py-4 rounded-xl font-black text-xs tracking-[0.2em] uppercase transition-all shadow-lg ${
+                     className={`flex-1 py-4 rounded-none font-black text-xs tracking-[0.2em] uppercase transition-all shadow-lg ${
                        gameState?.stepsCompleted.includes(activeStepIdx) 
                        ? 'bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500/30' 
-                       : 'bg-gold text-black shadow-gold/20 hover:scale-[1.02] active:scale-[0.98]'
+                       : 'bg-[#d4af37] text-black shadow-[#d4af37]/20 hover:scale-[1.02] active:scale-[0.98]'
                      }`}
                    >
                      {gameState?.stepsCompleted.includes(activeStepIdx) ? 'Re-Open Step' : 'Confirm Execution'}
@@ -1367,6 +1427,92 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-sm glass-panel p-6 rounded-none border-[#d4af37]/30">
+                <div className="flex justify-between items-center mb-6">
+                   <h3 className="text-[12px] font-black text-[#d4af37] uppercase tracking-[0.2em]">System Controls</h3>
+                   <button onClick={() => setShowSettings(false)} className="text-muted hover:text-white"><X size={16}/></button>
+                </div>
+                
+                <div className="space-y-4">
+                   <div className="p-4 bg-white/5 border border-white/10 rounded-none space-y-4">
+                      <div className="text-[10px] font-bold text-white uppercase tracking-widest border-b border-white/10 pb-2">Environment Controls</div>
+                      <button 
+                        onClick={() => setAudioEnabled(sounds.toggleAudio())}
+                        className="w-full flex justify-between items-center py-1 text-xs text-muted hover:text-white transition-colors"
+                      >
+                         <span>Terminal Sounds</span>
+                         <span className={audioEnabled ? "text-green-400 font-bold" : "text-red-400"}>{audioEnabled ? "ON" : "OFF"}</span>
+                      </button>
+                      <button 
+                        onClick={() => setVfxEnabled(!vfxEnabled)}
+                        className="w-full flex justify-between items-center py-1 text-xs text-muted hover:text-white transition-colors"
+                      >
+                         <span>CRT Visual Overlay</span>
+                         <span className={vfxEnabled ? "text-green-400 font-bold" : "text-red-400"}>{vfxEnabled ? "ON" : "OFF"}</span>
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const granted = await requestNotificationPermission();
+                            setPushEnabled(granted);
+                            if (granted) {
+                              sendLocalNotification('PROTOCOL ACTIVE', 'System connected. Notifications enabled.');
+                            } else {
+                              alert("Вы не можете включить уведомления в окне предварительного просмотра (iframe). Нажмите кнопку «Открыть в новой вкладке» (Open in New Tab) в правом верхнем углу, чтобы разрешить уведомления, или проверьте настройки браузера.");
+                            }
+                          } catch (e) {
+                            alert("Браузер блокирует запрос. Откройте приложение в новой вкладке.");
+                          }
+                        }}
+                        className="w-full flex justify-between items-center py-1 text-xs text-muted hover:text-white transition-colors"
+                      >
+                         <span>Push Notifications</span>
+                         <span className={pushEnabled ? "text-green-400 font-bold" : "text-red-400"}>{pushEnabled ? "ON" : "OFF"}</span>
+                      </button>
+                   </div>
+
+                   <div className="p-4 bg-white/5 border border-white/10 rounded-none space-y-4">
+                      <div className="text-[10px] font-bold text-white uppercase tracking-widest border-b border-white/10 pb-2">Data Integrity</div>
+                      <button 
+                        onClick={handleExportSave}
+                        className="w-full text-left py-1 text-xs text-[#d4af37]/80 hover:text-[#d4af37] transition-colors block"
+                      >
+                         &gt; Export Neural Backup
+                      </button>
+                      <button 
+                        onClick={handleImportSave}
+                        className="w-full text-left py-1 text-xs text-blue-400/80 hover:text-blue-400 transition-colors block"
+                      >
+                         &gt; Inject External Backup
+                      </button>
+                   </div>
+                   
+                   <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-none space-y-2">
+                      <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest flex items-center gap-2">
+                        <AlertTriangle size={12} /> Danger Zone
+                      </div>
+                      <p className="text-[8px] text-red-500/80 uppercase">Warning: Erases all protocol progress and local sovereignty metrics.</p>
+                      <button 
+                        onClick={handleHardReset}
+                        className="w-full py-3 bg-red-500/20 text-red-500 font-bold uppercase tracking-widest text-[9px] rounded-none border border-red-500/50 hover:bg-red-500 hover:text-black transition-all"
+                      >
+                         Factory Reset Protocol
+                      </button>
+                   </div>
+                   
+                   <div className="text-center pt-2">
+                      <p className="text-[7px] text-muted uppercase tracking-[0.3em] font-mono">QW_PROT Kernel v3.1</p>
+                   </div>
+                </div>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {gameState && screen === 'game' && <NetworkTerminal gameState={gameState} />}
     </div>
   );
 }

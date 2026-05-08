@@ -60,10 +60,10 @@ export const HoldingCell: React.FC<{ name: string }> = ({ name }) => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border-blue-500/20 shadow-2xl">
+    <div className="glass-panel rounded-none overflow-hidden border-blue-500/20 shadow-2xl">
       <div className="bg-blue-500/10 p-4 border-b border-blue-500/20 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+          <div className="p-2 bg-blue-500/20 rounded-none text-blue-400">
             <ShieldCheck size={20} />
           </div>
           <div>
@@ -80,18 +80,18 @@ export const HoldingCell: React.FC<{ name: string }> = ({ name }) => {
             placeholder="DESIRED OBJECT"
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value.toUpperCase())}
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-[10px] text-white uppercase font-bold tracking-widest outline-none focus:border-blue-400/50"
+            className="flex-1 bg-white/5 border border-white/10 rounded-none p-3 text-[10px] text-white uppercase font-bold tracking-widest outline-none focus:border-blue-400/50"
           />
           <input 
             type="number" 
             placeholder="COST"
             value={newItemCost}
             onChange={(e) => setNewItemCost(e.target.value)}
-            className="w-full sm:w-24 bg-white/5 border border-white/10 rounded-xl p-3 text-[10px] text-blue-400 font-bold outline-none focus:border-blue-400/50"
+            className="w-full sm:w-24 bg-white/5 border border-white/10 rounded-none p-3 text-[10px] text-blue-400 font-bold outline-none focus:border-blue-400/50"
           />
           <button 
             onClick={addItem}
-            className="px-6 py-3 bg-blue-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+            className="px-6 py-3 bg-blue-500 text-black rounded-none text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
           >
             Lock Item
           </button>
@@ -99,9 +99,9 @@ export const HoldingCell: React.FC<{ name: string }> = ({ name }) => {
 
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between group">
+            <div key={item.id} className="p-4 rounded-none bg-white/2 border border-white/5 flex items-center justify-between group">
               <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${isLocked(item.addedAt) ? 'bg-red-400/10 text-red-400' : 'bg-green-400/10 text-green-400'}`}>
+                <div className={`p-2 rounded-none ${isLocked(item.addedAt) ? 'bg-red-400/10 text-red-400' : 'bg-green-400/10 text-green-400'}`}>
                   {isLocked(item.addedAt) ? <Clock size={16} /> : <Timer size={16} />}
                 </div>
                 <div>
@@ -130,7 +130,7 @@ export const HoldingCell: React.FC<{ name: string }> = ({ name }) => {
           ))}
 
           {items.length === 0 && (
-            <div className="py-12 text-center bg-white/2 border border-dashed border-white/5 rounded-2xl">
+            <div className="py-12 text-center bg-white/2 border border-dashed border-white/5 rounded-none">
               <Heart className="mx-auto text-muted/20 mb-3" size={24} />
               <p className="text-[9px] text-muted uppercase tracking-widest">No active desires detected</p>
             </div>

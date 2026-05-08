@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Globe, Shield, MapPin, Server, Search, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Globe, Shield, MapPin, Server, Search, AlertTriangle, ExternalLink, Terminal } from 'lucide-react';
+import { AFFILIATE_LINKS } from '../protocolData';
 
 interface IpData {
   ip: string;
@@ -99,7 +100,7 @@ export const IpLeakTest: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel p-6 rounded-2xl border-l-[3px] border-l-red bg-red/5 ip-leak-test">
+    <div className="glass-panel p-6 rounded-none border-l-[3px] border-l-red bg-red/5 ip-leak-test">
       <div className="flex items-center gap-3 mb-4">
         <Globe size={20} className="text-red animate-pulse" />
         <h3 className="text-sm font-bold text-white tracking-[0.2em] uppercase italic">🌐 IP LEAK TEST</h3>
@@ -108,14 +109,13 @@ export const IpLeakTest: React.FC = () => {
       {(!data || error) && !loading && (
         <div className="space-y-4">
           <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-            See if your digital footprint is visible to the world. <br/>
-            <span className="text-[10px] text-gold/60 mt-1 block italic opacity-70">(Проверьте, виден ли ваш цифровой след всему миру.)</span>
+            See if your digital footprint is visible to the world.
           </p>
 
           <button 
             onClick={checkIP}
             id="ip-check-btn"
-            className="bg-gold text-black px-6 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:scale-[1.02] transition-transform"
+            className="bg-[#d4af37] text-black px-6 py-3 rounded-none text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:scale-[1.02] transition-transform"
           >
             <Search size={14} /> 🔍 {error ? 'Force Ping Grid' : 'Check My IP Visibility'}
           </button>
@@ -124,20 +124,19 @@ export const IpLeakTest: React.FC = () => {
             <div className="text-red text-[9px] bg-red/10 p-4 rounded border border-red/20 font-mono uppercase space-y-2">
                <p className="font-bold">⚠️ {error}</p>
                <p className="text-white/50 lowercase italic leading-relaxed">
-                  System blocked the scan. If you can't see your IP, activate manual shield or use NordVPN to mask your signal. <br/>
-                  (Система заблокировала сканирование. Если вы не видите свой IP, активируйте защиту вручную или используйте NordVPN.)
+                  System blocked the scan. Activate manual shield.
                </p>
                <div className="flex flex-wrap gap-2 pt-2">
                   <button onClick={handleManualPass} className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded text-[8px] border border-white/10 transition-colors">
                     Activate Manual Shield
                   </button>
                   <a 
-                    href="https://nordvpn.sjv.io/9VezoE" 
+                    href={AFFILIATE_LINKS.vpn} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="bg-gold/20 border border-gold/40 text-gold py-2 px-3 rounded text-[8px] font-bold tracking-widest uppercase flex items-center gap-1 hover:bg-gold hover:text-black transition-all"
+                    className="bg-purple-500/20 text-purple-400 border border-purple-500/30 py-2 px-3 rounded text-[8px] font-bold tracking-widest uppercase flex items-center gap-1 hover:bg-purple-500 hover:text-white transition-all"
                   >
-                    <Shield size={10} /> Get NordVPN Shield
+                    <Terminal size={10} /> EXECUTE MASKING PROTOCOL
                   </a>
                </div>
             </div>
@@ -146,8 +145,8 @@ export const IpLeakTest: React.FC = () => {
       )}
 
       {loading && (
-        <div className="flex items-center gap-3 text-gold">
-          <div className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex items-center gap-3 text-[#d4af37]">
+          <div className="w-4 h-4 border-2 border-[#d4af37] border-t-transparent rounded-none animate-spin"></div>
           <span className="text-[10px] font-bold tracking-widest uppercase">Scanning...</span>
         </div>
       )}
@@ -166,7 +165,7 @@ export const IpLeakTest: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="bg-red/10 p-5 rounded-xl border-l-4 border-red space-y-4">
+            <div className="bg-red/10 p-5 rounded-none border-l-4 border-red space-y-4">
               <div className="flex items-center gap-2 text-red-400">
                 <AlertTriangle size={16} />
                 <span className="text-[10px] font-bold tracking-widest uppercase">⚠️ WARNING: Your IP address is currently VISIBLE.</span>
@@ -193,14 +192,6 @@ export const IpLeakTest: React.FC = () => {
             </p>
 
             <div className="flex flex-col gap-3">
-              <a 
-                href="https://nordvpn.sjv.io/9VezoE" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-gold text-black py-4 px-6 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
-              >
-                <Shield size={16} /> 🔒 GET NORDVPN — HIDE YOUR IP NOW <ExternalLink size={14}/>
-              </a>
               <button 
                 onClick={checkIP}
                 className="text-white/30 text-[8px] uppercase tracking-widest hover:text-white transition-colors"

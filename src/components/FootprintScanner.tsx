@@ -7,7 +7,8 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertTriangle,
-  Fingerprint
+  Fingerprint,
+  Terminal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AFFILIATE_LINKS } from '../protocolData';
@@ -77,10 +78,10 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
   };
 
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border-orange-500/20 shadow-2xl">
+    <div className="glass-panel rounded-none overflow-hidden border-orange-500/20 shadow-2xl">
       <div className="bg-orange-500/10 p-4 border-b border-orange-500/20 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400">
+          <div className="p-2 bg-orange-500/20 rounded-none text-orange-400">
             <Fingerprint size={20} />
           </div>
           <div>
@@ -101,7 +102,7 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
                 placeholder="YOUR FULL NAME"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value.toUpperCase())}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xl text-white font-mono outline-none focus:border-orange-400/50 transition-all uppercase"
+                className="w-full bg-white/5 border border-white/10 rounded-none p-4 text-xl text-white font-mono outline-none focus:border-orange-400/50 transition-all uppercase"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted/30">
                 <Search size={18} />
@@ -112,7 +113,7 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
           <button 
             onClick={runScan}
             disabled={isScanning}
-            className={`w-full py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all ${
+            className={`w-full py-4 rounded-none text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all ${
               isScanning 
                 ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
                 : 'bg-orange-500 text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.2)]'
@@ -131,7 +132,7 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
               exit={{ opacity: 0, scale: 0.95 }}
               className="space-y-4"
             >
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-white/5 rounded-none overflow-hidden">
                 <motion.div 
                   className="h-full bg-gradient-to-r from-orange-600 to-orange-400"
                   initial={{ width: 0 }}
@@ -159,7 +160,7 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl space-y-5 relative overflow-hidden">
+              <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-none space-y-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10 text-red-500">
                   <ShieldAlert size={80} />
                 </div>
@@ -186,24 +187,16 @@ export const FootprintScanner: React.FC<{ unitName: string }> = ({ unitName }) =
                 <p className="text-[10px] text-gray-400 leading-relaxed italic">
                   Data brokers are actively selling your home address, DOB, and contact info. This information is a direct vector for social engineering and physical threats.
                 </p>
-              </div>
-
-              <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl space-y-3">
-                <div className="flex items-center gap-3 text-orange-400">
-                  <ShieldCheck size={20} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Architect's Recommendation</span>
+                <div className="pt-4 border-t border-red-500/10">
+                  <a 
+                    href={AFFILIATE_LINKS.dataRemoval} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full py-4 bg-orange-500/10 text-orange-400 border border-orange-500/30 rounded-none text-[10px] font-black uppercase tracking-[0.2em] hover:bg-orange-500/20 transition-all flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Terminal size={14} /> DEPROVISIONING TOOL
+                  </a>
                 </div>
-                <p className="text-[10px] text-gray-300 leading-relaxed">
-                  Initiate the <strong>Sovereign Deprovisioning Protocol</strong>. Use MyDataRemoval to automatically opt-out from 100+ broker databases simultaneously.
-                </p>
-                <a 
-                  href={AFFILIATE_LINKS.dataRemoval} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full py-4 bg-orange-500 text-black rounded-lg text-[10px] font-black uppercase tracking-[0.2em] hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-                >
-                  Remove My Data — 55% Off Lifetime <ExternalLink size={14} />
-                </a>
               </div>
             </motion.div>
           )}

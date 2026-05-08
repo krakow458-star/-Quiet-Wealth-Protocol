@@ -11,7 +11,10 @@ const ACTIVITY_TEMPLATES = [
   { name: "FORTRESS_X", actions: ["Day 12 — Network mapped", "cut 2 drain contacts"], type: "info" },
   { name: "QUIET_ONE", actions: ["completed Day 9 — Clean Fuel", "saved $180/month"], type: "success" },
   { name: "ARCH_88", actions: ["Day 6 — Dead assets converted", "sold 5 items: +$340"], type: "info" },
-  { name: "NEWBLOOD", actions: ["just started Protocol", "Day 1 — Silent Audit"], type: "new" }
+  { name: "NEWBLOOD", actions: ["just started Protocol", "Day 1 — Silent Audit"], type: "new" },
+  { name: "DRIFTER_9", actions: ["missed 48h deadline", "downgraded -1 Day", "-10 Sovereignty penalty"], type: "penalty" },
+  { name: "CITIZEN_V", actions: ["failed to report", "lost streak focus: -5", "demoted to Day 4"], type: "penalty" },
+  { name: "ECHO_0x", actions: ["protocol breach", "-1 Day penalty", "funds drained"], type: "penalty" }
 ];
 
 export const ActivityFeed: React.FC = () => {
@@ -54,9 +57,9 @@ export const ActivityFeed: React.FC = () => {
             className="flex items-start gap-4 border-b border-white/5 pb-3 group"
           >
             <div 
-              className="w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold border border-white/10 flex-shrink-0 bg-white/5 transition-colors group-hover:border-gold/40"
+              className="w-7 h-7 rounded flex items-center justify-center text-[9px] font-bold border border-white/10 flex-shrink-0 bg-white/5 transition-colors group-hover:border-[#d4af37]/40"
               style={{ 
-                color: item.template.type === 'success' ? '#00e676' : item.template.type === 'info' ? '#00b4d8' : '#d4af37' 
+                color: item.template.type === 'success' ? '#00e676' : item.template.type === 'info' ? '#00b4d8' : item.template.type === 'penalty' ? '#ff3366' : '#d4af37' 
               }}
             >
               {item.template.name.charAt(0)}
@@ -66,7 +69,7 @@ export const ActivityFeed: React.FC = () => {
                 <div className="text-[10px] font-black text-white uppercase tracking-wider">{item.template.name}</div>
                 <div className="text-[7px] text-muted/50 uppercase font-mono">{item.time}</div>
               </div>
-              <div className="text-[9px] text-muted leading-tight mt-0.5 group-hover:text-gold-light transition-colors">{item.action}</div>
+              <div className="text-[9px] text-muted leading-tight mt-0.5 group-hover:text-[#d4af37]-light transition-colors">{item.action}</div>
             </div>
           </motion.div>
         ))}

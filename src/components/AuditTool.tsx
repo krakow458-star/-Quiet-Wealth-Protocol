@@ -149,11 +149,11 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border-gold/30 shadow-2xl">
-      <div className="bg-gold/10 p-4 border-b border-gold/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div className="glass-panel rounded-none overflow-hidden border-[#d4af37]/30 shadow-2xl">
+      <div className="bg-[#d4af37]/10 p-4 border-b border-[#d4af37]/20 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gold/20 rounded-lg">
-            <Activity className="text-gold" size={20} />
+          <div className="p-2 bg-[#d4af37]/20 rounded-none">
+            <Activity className="text-[#d4af37]" size={20} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-widest">Financial Audit & Calc</h3>
@@ -161,22 +161,22 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
           </div>
         </div>
         
-        <div className="flex gap-2 bg-black/40 p-1 rounded-lg border border-white/5">
+        <div className="flex gap-2 bg-black/40 p-1 rounded-none border border-white/5">
           <button 
             onClick={() => setView('table')}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'table' ? 'bg-gold text-black' : 'text-muted hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-none flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'table' ? 'bg-[#d4af37] text-black' : 'text-muted hover:text-white'}`}
           >
             <TableIcon size={12} /> Table
           </button>
           <button 
             onClick={() => setView('calc')}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'calc' ? 'bg-orange-500 text-black' : 'text-muted hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-none flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'calc' ? 'bg-orange-500 text-black' : 'text-muted hover:text-white'}`}
           >
             <CalcIcon size={12} /> Calc
           </button>
           <button 
             onClick={() => setView('chart')}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'chart' ? 'bg-blue-500 text-black' : 'text-muted hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-none flex items-center gap-2 text-[10px] uppercase font-bold transition-all ${view === 'chart' ? 'bg-blue-500 text-black' : 'text-muted hover:text-white'}`}
           >
             <PieChartIcon size={12} /> Analysis
           </button>
@@ -238,7 +238,7 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                               step="0.01"
                               value={e.amount === 0 ? '' : e.amount}
                               onChange={(val) => updateExpense(e.id, 'amount', val.target.value === '' ? 0 : parseFloat(val.target.value))}
-                              className="bg-transparent border-none text-[10px] text-gold font-bold focus:ring-0 w-24 px-0"
+                              className="bg-transparent border-none text-[10px] text-[#d4af37] font-bold focus:ring-0 w-24 px-0"
                             />
                           </div>
                         </td>
@@ -246,7 +246,7 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                           <select 
                             value={e.category}
                             onChange={(val) => updateExpense(e.id, 'category', val.target.value as any)}
-                            className="bg-black/50 border border-white/10 rounded px-2 py-1 text-[9px] uppercase font-bold text-muted focus:text-gold outline-none"
+                            className="bg-black/50 border border-white/10 rounded px-2 py-1 text-[9px] uppercase font-bold text-muted focus:text-[#d4af37] outline-none"
                           >
                             <option value="survival">Survival</option>
                             <option value="growth">Growth</option>
@@ -267,7 +267,7 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4 border-t border-white/5">
                 <button 
                   onClick={addRow}
-                  className="w-full sm:w-auto px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 bg-white/5 border border-white/10 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                 >
                   <Plus size={14} /> Add Transaction
                 </button>
@@ -275,7 +275,7 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                 <button 
                   onClick={exportToCSV}
                   disabled={expenses.length === 0}
-                  className="w-full sm:w-auto px-6 py-3 bg-gold/10 border border-gold/30 text-gold rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gold/20 transition-all flex items-center justify-center gap-2 disabled:opacity-20"
+                  className="w-full sm:w-auto px-6 py-3 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-[#d4af37]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-20"
                 >
                   <Download size={14} /> Export CSV
                 </button>
@@ -292,11 +292,11 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
               className="space-y-6 max-w-md mx-auto py-8"
             >
               <div className="text-center space-y-2">
-                <div className="text-[10px] font-bold text-gold uppercase tracking-[0.3em]">Quick Summation Hub</div>
+                <div className="text-[10px] font-bold text-[#d4af37] uppercase tracking-[0.3em]">Quick Summation Hub</div>
                 <p className="text-[9px] text-muted uppercase leading-relaxed">Sum up multiple small expenses here before logging them to the main ledger.</p>
               </div>
 
-              <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-6">
+              <div className="p-6 bg-white/5 border border-white/10 rounded-none space-y-6">
                 <div className="space-y-2">
                   <label className="text-[8px] text-muted uppercase tracking-widest">Mathematical Input</label>
                   <input 
@@ -304,19 +304,19 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                     value={calcInput}
                     onChange={(e) => performCalc(e.target.value)}
                     placeholder="e.g. 5.99 + 12.50 + 3.00"
-                    className="w-full bg-black/40 border border-white/10 p-4 font-mono text-xl text-gold outline-none focus:border-gold/30 transition-all rounded-xl"
+                    className="w-full bg-black/40 border border-white/10 p-4 font-mono text-xl text-[#d4af37] outline-none focus:border-[#d4af37]/30 transition-all rounded-none"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gold/10 rounded-xl border border-gold/20">
-                  <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Identified Pulse:</span>
+                <div className="flex items-center justify-between p-4 bg-[#d4af37]/10 rounded-none border border-[#d4af37]/20">
+                  <span className="text-[10px] font-bold text-[#d4af37] uppercase tracking-widest">Identified Pulse:</span>
                   <span className="text-2xl font-mono font-black text-white">${calcResult.toFixed(2)}</span>
                 </div>
 
                 <button 
                   onClick={addResultToExpenses}
                   disabled={calcResult <= 0}
-                  className="w-full py-4 bg-gold text-black rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(212,175,55,0.1)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-20"
+                  className="w-full py-4 bg-[#d4af37] text-black rounded-none text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(212,175,55,0.1)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-20"
                 >
                   Inject Sum into Ledger
                 </button>
@@ -375,9 +375,9 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                   { label: 'Growth Fuel', val: totals.growth, color: 'text-blue-400', icon: <TrendingUp size={12}/> },
                   { label: 'System Noise', val: totals.noise, color: 'text-red-400', icon: <TrendingDown size={12}/> }
                 ].map((s) => (
-                  <div key={s.label} className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between">
+                  <div key={s.label} className="p-4 rounded-none bg-white/2 border border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-black/40 ${s.color}`}>
+                      <div className={`p-2 rounded-none bg-black/40 ${s.color}`}>
                         {s.icon}
                       </div>
                       <span className="text-[10px] font-bold uppercase text-white/70 tracking-widest">{s.label}</span>
@@ -388,9 +388,9 @@ export const AuditTool: React.FC<{ name: string }> = ({ name }) => {
                   </div>
                 ))}
                 
-                <div className="pt-4 border-t border-white/5 flex justify-between items-center bg-gold/5 -mx-6 -mb-6 p-6">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold text-white/50">Cumulative Total Pulse</span>
-                  <span className="text-xl font-mono font-bold text-gold">
+                <div className="pt-4 border-t border-white/5 flex justify-between items-center bg-[#d4af37]/5 -mx-6 -mb-6 p-6">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] text-white/50">Cumulative Total Pulse</span>
+                  <span className="text-xl font-mono font-bold text-[#d4af37]">
                     ${(totals.survival + totals.growth + totals.noise).toFixed(2)}
                   </span>
                 </div>

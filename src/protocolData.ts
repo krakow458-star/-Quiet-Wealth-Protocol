@@ -25,24 +25,24 @@ export interface ProtocolDay {
     title: string;
     desc: string;
     checks: string[];
-    cta: { text: string; link: string };
+    cta?: { text: string; link?: string };
     confirmText: string;
     bonusReward?: Partial<ProtocolDay['rewards']>;
   };
 }
-
-export const LOCALE_CONFIG: Record<string, { currency: string, label: string }> = {
-  US: { currency: '$', label: 'USA' },
-  CA: { currency: 'C$', label: 'CANADA' },
-  GB: { currency: '£', label: 'UK' },
-  EU: { currency: '€', label: 'EU' }
-};
 
 export const AFFILIATE_LINKS = {
   vpn: "https://nordvpn.sjv.io/9VezoE",
   ledger: "https://shop.ledger.com",
   dataRemoval: "https://goto.mydataremoval.com/n4R3jA",
   nexo: "https://nexo.sjv.io/YV1PNP"
+};
+
+export const LOCALE_CONFIG: Record<string, { currency: string, label: string }> = {
+  US: { currency: '$', label: 'USA' },
+  CA: { currency: 'C$', label: 'CANADA' },
+  GB: { currency: '£', label: 'UK' },
+  EU: { currency: '€', label: 'EU' }
 };
 
 export const PROTOCOL_DAYS: ProtocolDay[] = [
@@ -155,7 +155,7 @@ export const PROTOCOL_DAYS: ProtocolDay[] = [
       { 
         name: "CLOAKING PROTOCOL", 
         desc: "Identify masking solutions.",
-        studyContent: "Masking your signal is non-negotiable. Encryption is the only way to move through the network without being indexed. \n\nNordVPN is the recommended shield for this protocol's units.",
+        studyContent: "Masking your signal is non-negotiable. Encryption is the only way to move through the network without being indexed.",
         task: "Verify that you understand how to hide your IP. Prepare for total invisibility."
       }
     ],
@@ -167,7 +167,7 @@ export const PROTOCOL_DAYS: ProtocolDay[] = [
       title: "PROTOCOL REGISTRATION",
       desc: "To access Stage 02 (Days 6-30), you must register your sovereign unit and confirm your perimeter scan results.",
       checks: ["IP Scan Data Verified", "Sovereign Unit Identity Confirmed"],
-      cta: { text: "Register Unit & Mask IP", link: "https://nordvpn.sjv.io/9VezoE" },
+      cta: { text: "EXECUTE VPN REGISTRATION TOOL", link: AFFILIATE_LINKS.vpn },
       confirmText: "Registration Complete"
     }
   },
@@ -191,25 +191,92 @@ export const PROTOCOL_DAYS: ProtocolDay[] = [
       title: "PRIVACY DRILL",
       desc: "Confirm your IP is masked and trackers are blocked.",
       checks: ["IP anonymized", "Browser fingerprint unique"],
-      cta: { text: "Secure Perimeter", link: "https://nordvpn.com" },
+      cta: { text: "RUN PERIMETER SECRECY TOOL", link: AFFILIATE_LINKS.vpn },
       confirmText: "Shadow Mode Active",
       bonusReward: { sovereignty: 15 }
     }
   },
   {
+    day: 10,
+    title: "PHASE I: TOTAL ASSET MAPPING",
+    mission: "Visualize the empire. An unmapped asset is a lost asset.",
+    theory: "Wealth is not made, it is engineered. You must know your exact coordinates to plot an escape velocity.",
+    tip: "You cannot control what you do not measure.",
+    command: "CALCULATE",
+    assistantHint: "Every cent counts. Even the loose change. Count your liabilities too.",
+    steps: [
+      { name: "THE GREAT INVENTORY", desc: "List every account, crypto wallet, and hard asset.", studyContent: "Most people are terrified to look at their bank accounts. \n\nThe Sovereign looks the monster in the eye and commands it.", task: "Open a spreadsheet. List everything." },
+      { name: "DEBT ANNIHILATION PLAN", desc: "Assess liabilities and mark the highest interest debt for execution.", studyContent: "Debt is a tax on your future energy. It is a leash.", task: "Calculate exactly how much of your life force (hours worked) goes to paying interest." }
+    ],
+    timeline: [
+      { time: "05:00", action: "Financial Recon" },
+      { time: "18:00", action: "Balance Sheet Compiled" }
+    ],
+    rewards: { capital: 0, focus: 30, vitality: 0, sovereignty: 50 },
+    verificationGate: {
+      required: true,
+      type: 'registration',
+      title: "MILESTONE I: THE ARCHITECT",
+      desc: "You have survived 10 days of the silent code. You are no longer a consumer. Confirm your financial mapping is complete to access Stage II.",
+      checks: ["All Assets Mapped", "All Liabilities Sighted", "Consumer Mindset Eradicated"],
+      cta: { text: "INITIALIZE WEALTH DASHBOARD", link: AFFILIATE_LINKS.vpn },
+      confirmText: "Phase I Complete -> Enter Stage II"
+    }
+  },
+  {
+    day: 20,
+    title: "PHASE II: THE FORTRESS",
+    mission: "Convert noise into hard, untouchable signal.",
+    theory: "Fiat currency is a melting ice cube. The system depends on your wealth dissolving. You must build a freezer.",
+    tip: "Interest is the inverse of effort. Make it work for you.",
+    command: "VAULT",
+    assistantHint: "Look into high-yield, decentralized, or offshore secure vaults.",
+    steps: [
+      { name: "YIELD INFILTRATION", desc: "Calculate lost yield on stagnant capital.", studyContent: "Traditional banks offer 0.01%. They lend your money at 7%. They are stealing your energy.\n\nSovereign yields start at 5% and scale.", task: "Identify one pile of stagnant capital and plan its relocation." },
+      { name: "THE OFFSHORE MINDSET", desc: "Realize that borders are illusions for capital.", studyContent: "The ultra-wealthy do not keep their assets in the same jurisdiction they live in.", task: "Research one decentralized finance or offshore savings vehicle." }
+    ],
+    timeline: [
+      { time: "12:00", action: "Vault Structure Initiated" },
+      { time: "22:00", action: "Capital Relocated" }
+    ],
+    rewards: { capital: 50, focus: 20, vitality: 10, sovereignty: 75 },
+    verificationGate: {
+      required: true,
+      type: 'bonus',
+      title: "MILESTONE II: THE FORTRESS",
+      desc: "Your capital must be protected. Prepare the Sovereign Vault.",
+      checks: ["Capital is mobile", "Yield is optimized", "Vault architecture is secure"],
+      cta: { text: "ACCESS HIGH-YIELD VAULT", link: AFFILIATE_LINKS.nexo },
+      confirmText: "Vault Locked -> Enter Final Phase",
+      bonusReward: { sovereignty: 50, capital: 20 }
+    }
+  },
+  {
     day: 30,
-    title: "SOVEREIGN ACTIVATION",
+    title: "PHASE III: SOVEREIGN ACTIVATION",
     mission: "Finalize Sovereignty. You no longer chase money. You attract it.",
-    theory: "The protocol is now your OS. The noise is gone. Silence is your weapon.",
+    theory: "The protocol is now your Operating System. The consumer noise is gone. Silence is your weapon.",
     tip: "The Architect is now YOU.",
-    command: "ARCHITECT",
+    command: "TRANSCEND",
     assistantHint: "Witness the metrics. You are free.",
     steps: [
-      { name: "FINAL HARVEST", desc: "Review all 30 days of reclamations." },
-      { name: "SOVEREIGN OATH", desc: "Commit to the Silent Code permanently." }
+      { name: "THE FINAL HARVEST", desc: "Review 30 days of reclamation and calculated growth.", studyContent: "You started as a node in someone else's network. You are now the master of your own server. \n\nNo longer a battery. Now, a generator.", task: "Calculate total saved, totally earned, and total peace of mind gained." },
+      { name: "THE SOVEREIGN OATH", desc: "Commit to the Silent Code permanently.", studyContent: "Quiet wealth. Unseen power. Absolute freedom. \n\nThe protocol does not end here. It begins here.", task: "Read the oath. Execute." }
     ],
-    timeline: [{ time: "00:00", action: "SYSTEM EVOLUTION: COMPLETE" }],
-    rewards: { capital: 100, focus: 100, vitality: 100, sovereignty: 100 }
+    timeline: [
+      { time: "00:00", action: "SYSTEM EVOLUTION: COMPLETE" },
+      { time: "00:01", action: "Sovereign Mode Engaged" }
+    ],
+    rewards: { capital: 999, focus: 999, vitality: 999, sovereignty: 999 },
+    verificationGate: {
+      required: true,
+      type: 'exam',
+      title: "TOTAL DECOUPLING",
+      desc: "Initialize the final sequence. Cut the final chord to the Matrix.",
+      checks: ["Identity Masked", "Capital Secured", "Mindset Calibrated"],
+      cta: { text: "ACTIVATE SOVEREIGNTY SECURE CONNECTION", link: AFFILIATE_LINKS.vpn },
+      confirmText: "I AM SOVEREIGN"
+    }
   }
 ];
 
@@ -225,7 +292,18 @@ const dayContent: Record<number, { title: string; mission: string; theory: strin
   14: { title: "THE LIFE DEBT SCAN", mission: "Count the cost in hours.", theory: "Price is not currency. Price is time.", task: "Divide your monthly 'Noise' by your hourly wage. Calculate the hours of life lost.", study: "When you buy junk, you aren't spending money. You are spending your finite life force." },
   15: { title: "EMERGENCY LIQUIDITY", mission: "Build the 'F*** You' Fund.", theory: "Safety is the prerequisite for boldness.", task: "Direct {currency}200 to an emergency-only node.", study: "A man with 6 months of runway cannot be easily controlled by an employer." },
   16: { title: "DIGITAL FOOTPRINT SCAN", mission: "Erase the breadcrumbs of your identity.", theory: "Data is the new oil, and you are being harvested. Silence requires invisibility.", task: "Scan for your exposed personal data and initiate removal protocols.", study: "Data brokers sell your home address, phone number, and relatives to anyone with {currency}20. This information is used for social engineering and physical targeting. Invisibility is not a luxury; it is a defensive necessity." },
-  22: { title: "HARD ASSET DRILL", mission: "Convert noise into hard signal.", theory: "Fiat is a melting ice cube. Hard assets are the freezer.", task: "Calculate potential yield on your stagnant capital.", study: "Digital assets allow for global, frictionless yield. 10% APY is common in the sovereign layer, while banks offer 0.01%. Reclaim your interest." }
+  17: { title: "COGNITIVE DIET", mission: "Control the input to control the output.", theory: "Your attention is a finite resource harvested by algorithms.", task: "Delete one social media app from your phone for 24 hours.", study: "The modern economy monetizes your attention. Reclaiming your focus is a financial superpower." },
+  18: { title: "DOPAMINE FASTING", mission: "Reset the reward circuitry.", theory: "Constant stimulation numbs the mind to long-term goals.", task: "Spend one hour in complete silence, no screens, no input.", study: "Boredom is the birthplace of strategic thought. The system ensures you are never bored because a distracted mind cannot plan." },
+  19: { title: "NEGOTIATION LEVERAGE", mission: "Never accept the first offer.", theory: "Prices are suggestions for those without leverage.", task: "Call one service provider (internet, insurance) and negotiate a lower rate.", study: "The passive consumer pays the maximum rate. The Sovereign demands the minimum." },
+  21: { title: "TAX AWARENESS", mission: "Understand the largest expense of your life.", theory: "Tax is not a fixed penalty, it is a variable cost.", task: "Identify one legal tax optimization strategy for your income.", study: "The system relies on your ignorance of the tax code. Wealthy entities use the code as an instruction manual." },
+  22: { title: "HARD ASSET DRILL", mission: "Convert noise into hard signal.", theory: "Fiat is a melting ice cube. Hard assets are the freezer.", task: "Calculate potential yield on your stagnant capital.", study: "Digital assets allow for global, frictionless yield. 10% APY is common in the sovereign layer, while banks offer 0.01%. Reclaim your interest." },
+  23: { title: "ENERGY ARBITRAGE", mission: "Trade capital for time.", theory: "Time is the only non-renewable resource.", task: "Identify one task you hate that costs less than your hourly rate to outsource.", study: "The poor trade time for money. The rich trade money for time." },
+  24: { title: "SYSTEM ARCHITECTURE", mission: "Design foolproof systems.", theory: "You do not rise to the level of your goals. You fall to the level of your systems.", task: "Automate one bill payment or investment today.", study: "Relying on memory to manage wealth is amateur. The Architect builds automated engines." },
+  25: { title: "LEVERAGE MAXIMIZATION", mission: "Do the work once, harvest forever.", theory: "Linear effort produces linear results. Leverage produces exponential results.", task: "Identify a way to apply leverage (code, capital, media, labor) to your current skills.", study: "A software script works 24/7. A scalable system frees the Architect." },
+  26: { title: "GEOGRAPHIC DISCONNECT", mission: "Realize the world is your marketplace.", theory: "Your physical location should not dictate your economic potential.", task: "Research the economic advantages of operating online or offshore.", study: "The internet decoupled geography from income. Understand this to transcend local economies." },
+  27: { title: "NETWORK VETTING", mission: "Fortify your alliances.", theory: "Weak links break first under pressure.", task: "Identify one person who pulls you down and limit their access to your energy.", study: "You are building a fortress. Do not invite saboteurs inside the walls." },
+  28: { title: "SCENARIO PLANNING", mission: "Prepare for the black swans.", theory: "Hope is not a strategy. preparation is.", task: "Write down a plan for a sudden 50% loss of income.", study: "The Architect survives because they have already lived the disaster in their mind." },
+  29: { title: "THE EGO DEATH", mission: "Detach your identity from material possessions.", theory: "If you need things to look rich, you are poor.", task: "Find one status symbol you own and commit to never upgrading it for status again.", study: "The consumer buys things to impress people they don't like. The Sovereign buys assets that buy freedom." }
 };
 
 for (let i = 1; i <= 30; i++) {
@@ -247,7 +325,7 @@ for (let i = 1; i <= 30; i++) {
     study: "Discipline is the bridge between goals and accomplishment. In this phase, we harden the habits learned in week 1."
   };
 
-  PROTOCOL_DAYS.push({
+  const newDay: ProtocolDay = {
     day: i,
     title: content.title,
     mission: content.mission,
@@ -265,6 +343,32 @@ for (let i = 1; i <= 30; i++) {
     ],
     timeline: [{ time: "09:00", action: "Sovereign Check" }],
     rewards: { capital: 10, focus: 10, vitality: 10, sovereignty: 10 }
-  });
+  };
+
+  if (i === 16) {
+    newDay.verificationGate = {
+      required: true,
+      type: 'registration',
+      title: "DATA REMOVAL OVERRIDE",
+      desc: "Data-brokers are selling your location, relatives, and spending habits right now. Let's send a Cease and Desist.",
+      checks: ["Scan Complete", "Data Removal Initiated"],
+      cta: { text: "INITIALIZE DEPROVISIONING TOOL", link: AFFILIATE_LINKS.dataRemoval },
+      confirmText: "Removal Started"
+    };
+  }
+
+  if (i === 22) {
+    newDay.verificationGate = {
+      required: true,
+      type: 'bonus',
+      title: "ASSET HARDENING",
+      desc: "Fiat is melting. To become truly Sovereign, you need assets earning yield on their own while you sleep.",
+      checks: ["Wallet Connected", "Yield Generating"],
+      cta: { text: "LAUNCH SOVEREIGN YIELD TOOL", link: AFFILIATE_LINKS.nexo },
+      confirmText: "Vault Created"
+    };
+  }
+
+  PROTOCOL_DAYS.push(newDay);
 }
 PROTOCOL_DAYS.sort((a, b) => a.day - b.day);

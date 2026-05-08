@@ -1,15 +1,7 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { 
-  Lock, 
-  CheckCircle2, 
-  Circle, 
-  Trophy, 
-  Zap, 
-  Shield, 
-  Target,
-  ChevronRight
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Lock, Zap, Shield, Target, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { PROTOCOL_DAYS } from '../protocolData';
 
 interface SovereignMapProps {
   currentDay: number;
@@ -18,102 +10,153 @@ interface SovereignMapProps {
 }
 
 export const SovereignMap: React.FC<SovereignMapProps> = ({ currentDay, unlockedDays, onSelectDay }) => {
-  const days = Array.from({ length: 30 }, (_, i) => i + 1);
-
-  const getDayIcon = (day: number) => {
-    if (day < currentDay || (unlockedDays.includes(day + 1) && day < currentDay)) return <CheckCircle2 size={14} className="text-green-400" />;
-    if (day === currentDay) return <Zap size={14} className="text-gold animate-pulse" />;
-    if (unlockedDays.includes(day)) return <Circle size={14} className="text-blue-400" />;
-    if (day === 10 || day === 20 || day === 30) return <Trophy size={14} className="text-purple-400 opacity-40" />;
-    return <Lock size={14} className="text-white/20" />;
-  };
+  const [expandedDay, setExpandedDay] = useState<number | null>(currentDay);
 
   const getDayStatus = (day: number) => {
-    if (unlockedDays.includes(day + 1)) return 'COMPLETED';
-    if (day === currentDay) return 'ACTIVE_NODE';
+    const maxUnlocked = Math.max(...unlockedDays);
+    if (day < maxUnlocked) return 'COMPLETED';
+    if (day === maxUnlocked) return 'ACTIVE_NODE';
     if (unlockedDays.includes(day)) return 'UNLOCKED';
     return 'ENCRYPTED';
   };
 
   return (
-    <div className="glass-panel p-6 rounded-2xl border-gold/20 shadow-2xl overflow-hidden relative">
-      <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-        <div>
-          <h3 className="text-xs font-black text-white uppercase tracking-[0.3em]">Protocol_Roadmap</h3>
-          <p className="text-[8px] text-gold uppercase tracking-widest opacity-60">Architectural Sequence: 30 Nodes</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1 bg-gold/10 rounded-full border border-gold/30">
-          <Target size={12} className="text-gold" />
-          <span className="text-[10px] font-mono font-bold text-gold">{Math.round((unlockedDays.length / 30) * 100)}% DISCOVERY</span>
+    <div className="glass-panel rounded-none border border-[#d4af37]/20 shadow-2xl relative overflow-hidden flex flex-col h-[80vh]">
+      <div className="p-6 border-b border-white/5 bg-black/40 backdrop-blur-md shrink-0 z-10 relative">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Protocol_Roadmap</h3>
+            <p className="text-[10px] text-[#d4af37] uppercase tracking-widest opacity-60 mt-1">Architectural Sequence: 30 Nodes</p>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#d4af37]/10 rounded-none border border-[#d4af37]/30 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+            <Target size={14} className="text-[#d4af37]" />
+            <span className="text-[10px] font-mono font-bold text-[#d4af37]">{Math.round((unlockedDays.length / 30) * 100)}% DISCOVERY</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-3">
-        {days.map((day) => {
-          const isActive = day === currentDay;
+      <div className="overflow-y-auto flex-1 p-6 space-y-4 custom-scrollbar relative">
+        {/* Background line for timeline */}
+        <div className="absolute left-10 top-0 bottom-0 w-px bg-white/5" />
+
+        {PROTOCOL_DAYS.map((dayData, index) => {
+          const day = dayData.day;
+          const status = getDayStatus(day);
           const isUnlocked = unlockedDays.includes(day);
-          const isCompleted = day < currentDay && unlockedDays.includes(day + 1);
-          const isMilestone = day === 10 || day === 20 || day === 30;
+          const isExpanded = expandedDay === day;
+          const isCompleted = status === 'COMPLETED';
 
           return (
-            <motion.div
-              key={day}
-              whileHover={isUnlocked ? { scale: 1.05, y: -2 } : {}}
-              whileTap={isUnlocked ? { scale: 0.95 } : {}}
-              onClick={() => isUnlocked && onSelectDay(day)}
-              className={`
-                relative flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer
-                ${isActive ? 'bg-gold/20 border-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]' : ''}
-                ${isCompleted ? 'bg-green-500/10 border-green-500/30' : ''}
-                ${!isUnlocked ? 'bg-white/2 border-white/5 opacity-50 cursor-not-allowed' : ''}
-                ${isUnlocked && !isActive && !isCompleted ? 'bg-white/5 border-white/20' : ''}
-              `}
-            >
-              <div className="mb-2">{getDayIcon(day)}</div>
-              <span className={`text-[10px] font-mono font-black ${isActive ? 'text-gold' : 'text-white/40'}`}>
-                {day.toString().padStart(2, '0')}
-              </span>
-              
-              {isActive && (
-                <motion.div 
-                  layoutId="active-indicator"
-                  className="absolute -top-1 -right-1 w-2 h-2 bg-gold rounded-full shadow-[0_0_10px_#d4af37]" 
-                />
-              )}
-              
-              {isMilestone && !isCompleted && (
-                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 bg-purple-500/20 text-purple-400 text-[6px] font-bold rounded border border-purple-500/30">
-                   REWARD
-                 </div>
-              )}
-            </motion.div>
+            <div key={day} className="relative z-10 flex gap-6">
+              {/* Timeline marker */}
+              <div className="flex flex-col items-center shrink-0 w-8">
+                <div 
+                  className={`w-8 h-8 rounded-none border-2 flex items-center justify-center bg-black transition-all duration-300
+                    ${status === 'ACTIVE_NODE' ? 'border-[#d4af37] text-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.6)]' : ''}
+                    ${isCompleted ? 'border-[#d4af37]/40 text-[#d4af37]/60' : ''}
+                    ${!isUnlocked ? 'border-white/10 text-white/20' : ''}
+                    ${isUnlocked && status !== 'ACTIVE_NODE' && !isCompleted ? 'border-white/40 text-white/80' : ''}
+                  `}
+                >
+                  {isUnlocked ? (
+                    <span className="text-[10px] font-mono font-bold">{day.toString().padStart(2, '0')}</span>
+                  ) : (
+                    <Lock size={12} className="opacity-50" />
+                  )}
+                </div>
+                {/* Connecting line inside map, if you want it unbroken, we already have the absolute line, but this can overlay */}
+                {index !== PROTOCOL_DAYS.length - 1 && (
+                  <div className={`w-px h-full mt-2 transition-colors ${isCompleted ? 'bg-[#d4af37]/40' : 'bg-white/5'}`} />
+                )}
+              </div>
+
+              {/* Card */}
+              <div className="flex-1 pb-6">
+                <div 
+                  onClick={() => isUnlocked && setExpandedDay(isExpanded ? null : day)}
+                  className={`
+                    group rounded-none border transition-all duration-300 overflow-hidden
+                    ${isUnlocked ? 'cursor-pointer hover:border-[#d4af37]/40 bg-zinc-900/50 hover:bg-zinc-900/80' : 'cursor-not-allowed bg-black/40 border-white/5 opacity-60'}
+                    ${isExpanded ? 'border-[#d4af37]/50 shadow-[0_10px_30px_rgba(212,175,55,0.1)] bg-zinc-900/80' : 'border-white/10'}
+                  `}
+                >
+                  {/* Card Header */}
+                  <div className="p-5 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className={`text-[9px] font-mono font-bold tracking-widest uppercase ${status === 'ACTIVE_NODE' ? 'text-[#d4af37]' : 'text-muted'}`}>
+                          Node_{day.toString().padStart(2, '0')}
+                        </span>
+                        {isCompleted && <CheckCircle2 size={12} className="text-[#d4af37]/60" />}
+                      </div>
+                      <h4 className={`text-sm md:text-base font-black uppercase tracking-wider ${isUnlocked ? 'text-white' : 'text-white/40'}`}>
+                        {isUnlocked ? dayData.title : 'ENCRYPTED_DATA'}
+                      </h4>
+                    </div>
+                    {isUnlocked && (
+                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-white/40 group-hover:text-[#d4af37]/60">
+                         <ChevronDown size={20} />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Expanded Content */}
+                  <AnimatePresence>
+                    {isExpanded && isUnlocked && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-t border-white/5"
+                      >
+                        <div className="p-5 bg-black/40 space-y-6">
+                          <div className="space-y-2">
+                             <div className="text-[10px] text-muted uppercase tracking-widest font-bold">Mission Directive //</div>
+                             <p className="text-sm text-gray-300 leading-relaxed italic border-l-2 border-[#d4af37]/30 pl-3">
+                               "{dayData.mission}"
+                             </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="p-3 bg-white/5 rounded-none border border-white/10">
+                              <div className="text-[8px] text-muted uppercase tracking-widest mb-1">Capital Yield</div>
+                              <div className="text-xs font-mono text-[#d4af37]">+{dayData.rewards.capital}</div>
+                            </div>
+                            <div className="p-3 bg-white/5 rounded-none border border-white/10">
+                              <div className="text-[8px] text-muted uppercase tracking-widest mb-1">Focus Yield</div>
+                              <div className="text-xs font-mono text-blue-400">+{dayData.rewards.focus}</div>
+                            </div>
+                            <div className="p-3 bg-white/5 rounded-none border border-white/10">
+                              <div className="text-[8px] text-muted uppercase tracking-widest mb-1">Vitality Yield</div>
+                              <div className="text-xs font-mono text-red-400">+{dayData.rewards.vitality}</div>
+                            </div>
+                            <div className="p-3 bg-white/5 rounded-none border border-white/10">
+                              <div className="text-[8px] text-muted uppercase tracking-widest mb-1">Sovereignty</div>
+                              <div className="text-xs font-mono text-purple-400">+{dayData.rewards.sovereignty}</div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectDay(day);
+                            }}
+                            className="w-full relative py-4 bg-[#d4af37]/10 border border-[#d4af37]/30 hover:bg-[#d4af37]/20 text-[#d4af37] font-black text-[10px] tracking-[0.4em] uppercase rounded-none overflow-hidden transition-all flex items-center justify-center gap-3"
+                          >
+                            <Zap size={14} className="animate-pulse" />
+                            {status === 'COMPLETED' ? 'Review Protocol' : 'Execute Protocol'}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
           );
         })}
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-white/5">
-        <div className="flex items-center gap-3 p-3 bg-white/2 rounded-xl border border-white/5">
-          <Shield size={16} className="text-blue-400" />
-          <div>
-            <div className="text-[7px] text-muted uppercase font-bold tracking-widest">Security Status</div>
-            <div className="text-[9px] text-white font-mono uppercase tracking-widest">Stable_Node</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-white/2 rounded-xl border border-white/5">
-          <Target size={16} className="text-red-400" />
-          <div>
-            <div className="text-[7px] text-muted uppercase font-bold tracking-widest">Target Objective</div>
-            <div className="text-[9px] text-white font-mono uppercase tracking-widest">Invisibility_Achieved</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-gold/5 rounded-xl border border-gold/20">
-          <Zap size={16} className="text-gold animate-pulse" />
-          <div>
-            <div className="text-[7px] text-gold uppercase font-bold tracking-widest">Active Lesson</div>
-            <div className="text-[9px] text-white font-mono uppercase tracking-widest">Node_{currentDay.toString().padStart(2, '0')}</div>
-          </div>
-        </div>
       </div>
     </div>
   );
 };
+
